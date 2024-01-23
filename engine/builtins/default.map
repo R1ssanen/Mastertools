@@ -1,0 +1,180 @@
+{
+  "map": "default.map",
+  "animations_pool": {
+    "transformative": [
+      {
+        "name": "hover",
+        "length": 200,
+        "loop": true,
+        "keyframes": [
+          {
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "angle": [
+              0,
+              0,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "pos": [
+              -0.3412,
+              1.1434,
+              0.56941
+            ],
+            "angle": [
+              1.57080,
+              0.70539,
+              -1.40964
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "pos": [
+              0.85486,
+              0.77616,
+              -0.2799
+            ],
+            "angle": [
+              2.99373,
+              -0.27999,
+              -2.02242
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "pos": [
+              -0.1218,
+              -1.1536,
+              0.30015
+            ],
+            "angle": [
+              5.56598,
+              0.47500,
+              -2.59781
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "name": "door_open_close",
+        "length": 200,
+        "loop": true,
+        "keyframes": [
+          {
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "angle": [
+              0,
+              0,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "angle": [
+              0,
+              1.5708,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    ],
+    "skeletal": []
+  },
+  "camera": {
+    "pos": [
+      0,
+      0,
+      0
+    ],
+    "angle": [
+      0,
+      0,
+      0
+    ],
+    "fov": 90,
+    "near": 0.005,
+    "far": 100
+  },
+  "objects": [
+    {
+      "assets": [
+        "../../resources/assets/sponza/sponza.obj"
+        ],
+      "pos": [
+        0,
+        0,
+        0
+      ],
+      "angle": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "animations": []
+    }
+  ],
+  "lights": {
+    "point": [],
+    "directional": [
+      {
+        "dir": [
+          1,
+          0,
+          0
+        ],
+        "intensity": 1.0,
+        "color": [
+          1,
+          1,
+          1
+        ]
+      }
+    ]
+  }
+}
