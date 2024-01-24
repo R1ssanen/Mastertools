@@ -2,6 +2,8 @@
 
 #include "srpch.hpp"
 
+#define DEFAULT_TEXTURE "../../engine/builtins/untextured.png"
+
 namespace core {
 
 class Texture {
@@ -9,23 +11,23 @@ class Texture {
   Texture() = default;
   ~Texture() = default;
 
-  Texture(uint32_t* t_Data, size_t t_Width, size_t t_Height);
+  Texture(uint32_t* t_Data, unsigned int t_Width, unsigned int t_Height);
 
   const uint32_t* Data;
 
-  const size_t& GetWidth() const;
-  const size_t& GetHeight() const;
+  const unsigned int& GetWidth() const;
+  const unsigned int& GetHeight() const;
+  void Save(const std::string t_Filename) const;
 
  private:
-  size_t m_Width{0}, m_Height{0};
+  unsigned int m_Width{0}, m_Height{0};
 };
 
 using texture_t = std::shared_ptr<Texture>;
 
-void LoadTexture(const std::string& t_Path);
+const bool TextureExists(const std::string& t_Name);
 
-void SaveTexture(const std::string& t_TextureName,
-                 const std::string& t_FileName);
+void LoadTexture(const std::string& t_Path);
 
 texture_t GetTexture(const std::string& t_Name);
 

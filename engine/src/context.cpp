@@ -40,7 +40,7 @@ void Context::Update() {
   SDL_RenderCopy(Renderer, TargetTexture, nullptr, &m_Viewport);
   SDL_RenderPresent(Renderer);
 
-  std::fill_n(ColorBuffer, m_Spec.w * m_Spec.h, 0);
+  std::fill_n(ColorBuffer, m_Spec.w * m_Spec.h, 0xFFFFFFFF);
   std::fill_n(DepthBuffer, m_Spec.w * m_Spec.h, INFINITY);
 }
 

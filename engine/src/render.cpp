@@ -18,6 +18,12 @@ void DrawLine(Context& t_Context,
 
   for (float i = 0.f; i <= 1.f; i += step) {
     int x = a.x + ab.x * i, y = a.y + ab.y * i;
+
+    if (x < 0 || y < 0 || x > t_Context.GetWidth() - 1 ||
+        y > t_Context.GetHeight() - 1) {
+      continue;
+    }
+
     float z = glm::clamp(a.z + ab.z * i, 0.f, 1.f);
 
     if (t_Context.DepthBuffer[y * t_Context.GetWidth() + x] <= z) {
@@ -50,6 +56,11 @@ void RenderTri(Context& t_Context,
   min_y = glm::clamp<int>(min_y, 0, t_Context.GetHeight() - 1);
   max_y = glm::clamp<int>(max_y, 0, t_Context.GetHeight() - 1);
 
+  if ((max_x - min_x) * (max_y - min_y) == 0) {
+    return;
+  }
+
+  /*
   DrawLine(t_Context, glm::vec3(min_x, min_y, 1.f),
            glm::vec3(max_x, min_y, 1.f));
   DrawLine(t_Context, glm::vec3(max_x, min_y, 1.f),
@@ -58,6 +69,7 @@ void RenderTri(Context& t_Context,
            glm::vec3(min_x, max_y, 1.f));
   DrawLine(t_Context, glm::vec3(min_x, max_y, 1.f),
            glm::vec3(min_x, min_y, 1.f));
+  */
 
   for (int y = min_y; y <= max_y; y++) {
     int row = y * t_Context.GetWidth();
@@ -93,7 +105,8 @@ void RenderTri(Context& t_Context,
                               glm::clamp(u - static_cast<long>(u), 0.f, 1.f))]};
 
         t_Context.ColorBuffer[row + x] = Pixel;
-        // ToUint32(1.f - Z, 1.f - Z, 1.f - Z, 1.f);
+        // t_Context.ColorBuffer[row + x] =
+        //    ToUint32(1.f - Z, 1.f - Z, 1.f - Z, 1.f);
         t_Context.DepthBuffer[row + x] = Z;
       }
     }

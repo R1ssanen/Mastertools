@@ -18,7 +18,7 @@ Camera::Camera(const glm::vec3& t_Pos,
 
 glm::mat4 Camera::GetMatView() const {
   glm::vec3 Forward{glm::orientate3(m_Angle) * glm::vec3(0.f, 0.f, -1.f)};
-  return glm::lookAtRH(m_Pos, m_Pos + Forward, glm::vec3(0.f, -1.f, 0.f));
+  return glm::lookAtRH(m_Pos, m_Pos + Forward, glm::vec3(0.f, 1.f, 0.f));
 }
 
 glm::mat4 Camera::GetMatProjection(float width, float height) const {

@@ -3,6 +3,7 @@
 #include "camera.hpp"
 #include "context.hpp"
 #include "object.hpp"
+#include "skybox.hpp"
 #include "srpch.hpp"
 #include "timer.hpp"
 
@@ -30,6 +31,7 @@ class Application {
   std::vector<Object> m_Objects;
   Camera m_Camera;
   Timer m_Timer;
+  Skybox m_Skybox;
 };
 
 }  // namespace core
