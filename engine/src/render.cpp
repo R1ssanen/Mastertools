@@ -1,5 +1,7 @@
 #include "render.hpp"
 
+#include <initializer_list>
+
 #include "color.hpp"
 #include "context.hpp"
 #include "glm/gtc/packing.hpp"
@@ -12,7 +14,7 @@ namespace core {
 void DrawLine(Context& t_Context,
               const glm::vec3& a,
               const glm::vec3& b,
-              uint32_t col) {
+              uint32_t t_Col) {
   glm::vec3 ab = b - a;
   float step = glm::fastInverseSqrt(ab.x * ab.x + ab.y * ab.y + ab.z * ab.z);
 
@@ -24,24 +26,35 @@ void DrawLine(Context& t_Context,
       continue;
     }
 
-    float z = glm::clamp(a.z + ab.z * i, 0.f, 1.f);
-
+    /*float z = glm::clamp(a.z + ab.z * i, 0.f, 1.f);
     if (t_Context.DepthBuffer[y * t_Context.GetWidth() + x] <= z) {
       continue;
-    }
+    }*/
 
-    t_Context.ColorBuffer[y * t_Context.GetWidth() + x] = col;
-    t_Context.DepthBuffer[y * t_Context.GetWidth() + x] = z;
+    t_Context.ColorBuffer[y * t_Context.GetWidth() + x] = t_Col;
+    t_Context.DepthBuffer[y * t_Context.GetWidth() + x] = 0;
   }
 }
 
-float Edge(float ax, float ay, float bx, float by, float cx, float cy) {
-  return (cx - ax) * (by - ay) - (cy - ay) * (bx - ax);
+void DrawWireframe(Context& t_Context,
+                   const std::initializer_list<glm::vec3>& t_Points,
+                   bool t_Closed,
+                   uint32_t t_Col) {
+  for (size_t i = 0; i < t_Points.size() - 1; i++) {
+    DrawLine(t_Context, std::data(t_Points)[i], std::data(t_Points)[i + 1],
+             t_Col);
+  }
+
+  if (t_Closed) {
+    DrawLine(t_Context, std::data(t_Points)[t_Points.size() - 1],
+             std::data(t_Points)[0], t_Col);
+  }
 }
 
 void RenderTri(Context& t_Context,
                const Tri& t_Tri,
-               const std::string& t_TexName) {
+               const std::string& t_TexName,
+               float t_InverseFar) {
   const auto [a, b, c] = t_Tri;
   const texture_t Texture{GetTexture(t_TexName)};
 
@@ -57,22 +70,17 @@ void RenderTri(Context& t_Context,
   max_y = glm::clamp<int>(max_y, 0, t_Context.GetHeight() - 1);
 
   if ((max_x - min_x) * (max_y - min_y) == 0) {
-    return;
+    return;  // zero area triangle
   }
 
-  /*
-  DrawLine(t_Context, glm::vec3(min_x, min_y, 1.f),
-           glm::vec3(max_x, min_y, 1.f));
-  DrawLine(t_Context, glm::vec3(max_x, min_y, 1.f),
-           glm::vec3(max_x, max_y, 1.f));
-  DrawLine(t_Context, glm::vec3(max_x, max_y, 1.f),
-           glm::vec3(min_x, max_y, 1.f));
-  DrawLine(t_Context, glm::vec3(min_x, max_y, 1.f),
-           glm::vec3(min_x, min_y, 1.f));
+  /*DrawWireframe(t_Context,
+                {glm::vec3(min_x, min_y, 1.f), glm::vec3(max_x, min_y, 1.f),
+                 glm::vec3(max_x, max_y, 1.f), glm::vec3(min_x, max_y, 1.f)});
   */
-
   for (int y = min_y; y <= max_y; y++) {
     int row = y * t_Context.GetWidth();
+
+    bool Outside{true};
 
     for (int x = min_x; x <= max_x; x++) {
       float bc0 = Edge(b.m_Pos.x, b.m_Pos.y, c.m_Pos.x, c.m_Pos.y, x, y),
@@ -80,12 +88,14 @@ void RenderTri(Context& t_Context,
             bc2 = Edge(a.m_Pos.x, a.m_Pos.y, b.m_Pos.x, b.m_Pos.y, x, y);
 
       if (bc0 <= 0.f && bc1 <= 0.f && bc2 <= 0.f) {
+        Outside = false;
+
         bc0 *= full, bc1 *= full, bc2 *= full;
 
         float W = 1.f / (a.m_Pos.w * bc0 + b.m_Pos.w * bc1 + c.m_Pos.w * bc2);
         float Z =
             glm::clamp((a.m_Pos.z * bc0 + b.m_Pos.z * bc1 + c.m_Pos.z * bc2) *
-                           W * (1.f / 10.f),
+                           W * t_InverseFar,
                        0.f, 1.f);
 
         if (t_Context.DepthBuffer[row + x] <= Z) {
@@ -97,17 +107,27 @@ void RenderTri(Context& t_Context,
               v = std::fabs(bc0 * a.m_UV.y + bc1 * b.m_UV.y + bc2 * c.m_UV.y) *
                   W;
 
-        uint32_t Pixel{
-            Texture->Data[int(Texture->GetHeight() *
-                              glm::clamp(v - static_cast<long>(v), 0.f, 1.f)) *
-                              Texture->GetWidth() +
-                          int(Texture->GetWidth() *
-                              glm::clamp(u - static_cast<long>(u), 0.f, 1.f))]};
+        unsigned int Loc{
+            static_cast<unsigned int>(Texture->GetHeight() * (v - long(v))) *
+                Texture->GetWidth() +
+            static_cast<unsigned int>(Texture->GetWidth() * (u - long(u)))};
 
-        t_Context.ColorBuffer[row + x] = Pixel;
-        // t_Context.ColorBuffer[row + x] =
-        //    ToUint32(1.f - Z, 1.f - Z, 1.f - Z, 1.f);
+        uint32_t Pixel{Texture->Data[glm::clamp(
+            Loc, (unsigned int)0,
+            Texture->GetWidth() * Texture->GetHeight() - 1)]};
+
+        float Light{
+            glm::clamp(bc0 * a.m_Light + bc1 * b.m_Light + bc2 * c.m_Light,
+                       AMBIENT_INTENSITY, 1.f)};
+
+        t_Context.ColorBuffer[row + x] = ModUint32(Pixel, Light);
         t_Context.DepthBuffer[row + x] = Z;
+      }
+
+      else {
+        if (!Outside) {
+          break;
+        }
       }
     }
   }

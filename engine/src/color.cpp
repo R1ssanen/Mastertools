@@ -5,7 +5,7 @@
 namespace core {
 
 uint32_t ToUint32(float r, float g, float b, float a) {
-  glm::u8vec4 Color{r * 255, g * 255, b * 255, a * 255};
+  glm::u8vec4 Color{a * 255, g * 255, b * 255, r * 255};
   return glm::packUint4x8(Color);
 }
 
@@ -34,6 +34,27 @@ float AsFloat(const uint32_t& t_Color, Part t_ColorMap) {
 
 uint8_t AsUint8(const uint32_t& t_Color, Part t_ColorMap) {
   return t_Color & static_cast<uint32_t>(t_ColorMap);
+}
+
+uint32_t BlendUint32(const uint32_t& t_ColorA,
+                     const uint32_t& t_ColorB,
+                     float t_Scalar) {
+  glm::fvec4 ColorA{glm::unpackUint4x8(t_ColorA)},
+      ColorB{glm::unpackUint4x8(t_ColorB)};
+
+  return glm::packUint4x8(ColorA * (1.f - t_Scalar) + ColorB * t_Scalar);
+}
+
+uint32_t AverageUint32(const uint32_t& t_ColorA, const uint32_t& t_ColorB) {
+  glm::fvec4 ColorA{glm::unpackUint4x8(t_ColorA)},
+      ColorB{glm::unpackUint4x8(t_ColorB)};
+
+  return glm::packUint4x8((ColorA + ColorB) * 0.5f);
+}
+
+uint32_t ModUint32(const uint32_t& t_Color, float t_Scalar) {
+  glm::fvec4 Color{glm::unpackUint4x8(t_Color)};
+  return glm::packUint4x8(Color * t_Scalar);
 }
 
 }  // namespace core

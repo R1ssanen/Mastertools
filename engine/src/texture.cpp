@@ -50,20 +50,26 @@ void LoadTexture(const std::string& t_Path) {
     return;
   }
 
-  SDL_Surface* TextureSurf{IMG_Load(t_Path.c_str())};
-  if (!TextureSurf) {
+  int Format, Width, Height;
+  uint8_t* Data8b{
+      stbi_load(t_Path.c_str(), &Width, &Height, &Format, STBI_rgb_alpha)};
+
+  if (!Data8b) {
     throw std::invalid_argument("Could not load texture file '" + t_Path +
                                 "'.");
   }
 
-  TextureSurf =
-      SDL_ConvertSurfaceFormat(TextureSurf, SDL_PIXELFORMAT_ARGB8888, 0);
+  uint32_t* Data32b{new uint32_t[Width * Height]};
+  for (int ID = 0; ID < Width * Height; ID++) {
+    Data32b[ID] =
+        glm::packUint4x8(glm::u8vec4(Data8b[ID * 4 + 3], Data8b[ID * 4 + 2],
+                                     Data8b[ID * 4 + 1], Data8b[ID * 4]));
+  }
 
-  auto Texture{std::make_shared<core::Texture>(
-      static_cast<uint32_t*>(TextureSurf->pixels), TextureSurf->w,
-      TextureSurf->h)};
-  s_LoadedTextures[t_Path] = Texture;
-  // Texture->Save("out.png");
+  s_LoadedTextures[t_Path] =
+      std::make_shared<core::Texture>(std::move(Data32b), Width, Height);
+
+  stbi_image_free(Data8b);
 }
 
 texture_t GetTexture(const std::string& t_Name) {

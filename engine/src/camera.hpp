@@ -3,9 +3,10 @@
 #include "clipping.hpp"
 #include "srpch.hpp"
 
-#define SENSITIVITY_X 3.f
-#define SENSITIVITY_Y 3.f
+#define SENSITIVITY_YAW 1000.f
+#define SENSITIVITY_PITCH 1000.f
 #define CAM_MAX_VERTICAL_ANGLE 85.f
+#define CAMERA_SPEED 0.1f
 
 namespace core {
 
@@ -23,6 +24,10 @@ class Camera {
   void SetAngle(const glm::vec3& t_Val) { m_Angle = t_Val; }
 
   const Frustum& GetFrustum() const { return m_Frustum; }
+  float GetInverseFar() const { return 1.f / m_Far; }
+
+  void HandleMovement();
+  void HandleRotation();
 
   Camera(const glm::vec3& t_Pos,
          const glm::vec3& t_Angle,
@@ -36,7 +41,7 @@ class Camera {
 
   Frustum m_Frustum{
       Plane(glm::vec3(0.f, 0.f, m_Near), glm::vec3(0.f, 0.f, 1.f)),  // near
-      Plane(glm::vec3(0.f, 0.f, m_Far), glm::vec3(0.f, 0.f, -1.f)),  // far
+      Plane(glm::vec3(0.f, 0.f, m_Far), glm::vec3(0.f, 0.f, -1.f))   // far
   };
 };
 

@@ -1,6 +1,9 @@
 #include "application.hpp"
 
+#include "callbacks.hpp"
 #include "culling.hpp"
+#include "keys.hpp"
+#include "light.hpp"
 #include "mesh.hpp"
 #include "object.hpp"
 #include "render.hpp"
@@ -18,15 +21,10 @@ Application* Application::GetInstance() {
 }
 
 void Application::Init() {
-  if (!IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_TIF)) {
-    throw std::runtime_error("SDL image init failure.");
-  }
+  LoadMap();
 
-  m_Objects.push_back(
-      Object(LoadMeshOBJ("../../resources/meshes/", "teapot.obj"),
-             glm::vec3(0.f, 0.f, -1.f)));
-
-  SDL_SetRelativeMouseMode(SDL_TRUE);
+  SDL_AddEventWatch(ActionCallback, this);
+  // SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 void Application::LogPerformance() {
@@ -36,95 +34,44 @@ void Application::LogPerformance() {
 
 void Application::Run() {
   while (m_Running) {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT) {
-        m_Running = false;
-      }
-
-      if (event.type == SDL_WINDOWEVENT_RESIZED) {
-        SDL_DisplayMode Spec{m_Context.GetSpec()};
-        SDL_Rect Viewport{m_Context.GetViewport()};
-
-        Spec.w = event.window.data1;
-        Spec.h = event.window.data2;
-        m_Context.SetSpec(Spec);
-
-        m_Context.SetViewport(Viewport.x, Viewport.y, Spec.w, Spec.h);
-      }
-
-      if (event.type == SDL_KEYDOWN) {
-        if (event.key.keysym.sym == SDLK_ESCAPE) {
-          m_Wireframe = !m_Wireframe;
-        }
-
-        if (event.key.keysym.sym == SDLK_RETURN) {
-          m_Paused = !m_Paused;
-        }
-
-        if (event.key.keysym.sym == SDLK_q) {
-          m_Running = false;
-        }
-
-        if (event.key.keysym.sym == SDLK_w) {
-          m_Camera.SetPos(m_Camera.GetPos() +
-                          glm::vec3(0.f, 0.f, -1.f) * 0.015f);
-        }
-        if (event.key.keysym.sym == SDLK_s) {
-          m_Camera.SetPos(m_Camera.GetPos() +
-                          glm::vec3(0.f, 0.f, 1.f) * 0.015f);
-        }
-
-        if (event.key.keysym.sym == SDLK_a) {
-          m_Camera.SetPos(m_Camera.GetPos() +
-                          glm::vec3(-1.f, 0.f, 0.f) * 0.015f);
-        }
-        if (event.key.keysym.sym == SDLK_d) {
-          m_Camera.SetPos(m_Camera.GetPos() +
-                          glm::vec3(1.f, 0.f, 0.f) * 0.015f);
-        }
-      }
-
-      if (event.type == SDL_MOUSEMOTION) {
-        int DeltaMouseX, DeltaMouseY;
-        SDL_GetRelativeMouseState(&DeltaMouseX, &DeltaMouseY);
-
-        float DMX{DeltaMouseX /
-                  static_cast<float>(m_Context.GetWidth() * 0.5f)};
-        float DMY{DeltaMouseY /
-                  static_cast<float>(m_Context.GetHeight() * 0.5f)};
-
-        const float DeltaAngleX{DMX * SENSITIVITY_X},
-            DeltaAngleY{DMY * SENSITIVITY_Y};
-
-        glm::vec3 NewAngle{
-            glm::clamp<float>(m_Camera.GetAngle().x + DeltaAngleY,
-                              -glm::radians<float>(CAM_MAX_VERTICAL_ANGLE),
-                              glm::radians<float>(CAM_MAX_VERTICAL_ANGLE)),
-            m_Camera.GetAngle().y + DeltaAngleX, m_Camera.GetAngle().z};
-
-        std::cout << DeltaAngleX << ' ' << DeltaAngleY << '\n';
-
-        // basic average smoothing
-        m_Camera.SetAngle((m_Camera.GetAngle() + NewAngle) * 0.5f);
-      }
-    }
+    SDL_PumpEvents();
+    m_Camera.HandleMovement();
+    m_Camera.HandleRotation();
 
     glm::mat4 MatView{m_Camera.GetMatView()};
     glm::mat4 MatProjection{
         m_Camera.GetMatProjection(m_Context.GetWidth(), m_Context.GetHeight())};
 
+    std::vector<PointLight> ViewspacePointLights;
+    std::transform(m_PointLights.begin(), m_PointLights.end(),
+                   std::back_inserter(ViewspacePointLights),
+                   [MatView](const PointLight& Light) {
+                     return PointLight(MatView * glm::vec4(Light.GetPos(), 1.f),
+                                       Light.GetIntensity());
+                   });
+
     for (const Object& Object : m_Objects) {
+      // Object.SetAngle(
+      //     glm::vec3(m_Camera.GetAngle().y, 0.f, m_Camera.GetAngle().x));
+
       glm::mat4 MatModel{Object.GetTranslation() * Object.GetRotation() *
                          Object.GetScale()};
       glm::mat4 MatModelView{MatView * MatModel};
+
+      // std::vector<Tri> DrawTris;
 
       for (const Mesh& Mesh : Object.GetMeshes()) {
         std::vector<Vertex> TransVertices{Mesh.GetVertices()};
 
         for (Vertex& Vertex : TransVertices) {
-          Vertex.m_Pos = MatProjection * MatModelView * Vertex.m_Pos;
+          Vertex.m_Pos = MatModelView * Vertex.m_Pos;
           Vertex.m_Normal = Object.GetRotation() * Vertex.m_Normal;
+
+          for (const PointLight& Light : ViewspacePointLights) {
+            Vertex.m_Light += Light.GetLighting(Vertex);
+          }
+
+          Vertex.m_Pos = MatProjection * Vertex.m_Pos;
         }
 
         for (size_t ID = 0; ID < Mesh.GetIndices().size(); ID += 3) {
@@ -153,15 +100,30 @@ void Application::Run() {
             }
 
             if (!m_Wireframe) {
-              RenderTri(m_Context, Tri, Mesh.GetTexName());
+              RenderTri(m_Context, Tri, Mesh.GetTexName(),
+                        m_Camera.GetInverseFar());
             } else {
-              DrawLine(m_Context, Tri[0].m_Pos, Tri[1].m_Pos);
-              DrawLine(m_Context, Tri[1].m_Pos, Tri[2].m_Pos);
-              DrawLine(m_Context, Tri[2].m_Pos, Tri[0].m_Pos);
+              DrawWireframe(m_Context,
+                            {Tri[0].m_Pos, Tri[1].m_Pos, Tri[2].m_Pos});
             }
           }
         }
       }
+
+      /*std::sort(DrawTris.begin(), DrawTris.end(),
+                [](const Tri& t_First, const Tri& t_Second) {
+                  return (t_First[0].m_Pos.z + t_First[1].m_Pos.z +
+                          t_First[2].m_Pos.z) *
+                             glm::third<float>() >
+                         (t_Second[0].m_Pos.z + t_Second[1].m_Pos.z +
+                          t_Second[2].m_Pos.z) *
+                             glm::third<float>();
+                });
+
+      for (const Tri& Tri : DrawTris) {
+        RenderTri(m_Context, Tri, "../../engine/builtins/untextured.png",
+                  m_Camera.GetInverseFar());
+      }*/
     }
 
     m_Skybox.Render(m_Camera, m_Context);
