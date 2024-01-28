@@ -2,9 +2,7 @@
 
 #include <initializer_list>
 
-#include "color.hpp"
 #include "context.hpp"
-#include "glm/gtc/packing.hpp"
 #include "srpch.hpp"
 #include "texture.hpp"
 #include "vertex.hpp"
@@ -53,10 +51,10 @@ void DrawWireframe(Context& t_Context,
 
 void RenderTri(Context& t_Context,
                const Tri& t_Tri,
-               const std::string& t_TexName,
-               float t_InverseFar) {
+               const texture_t& t_Texture,
+               float t_InverseFar,
+               const shader_t& t_Shader) {
   const auto [a, b, c] = t_Tri;
-  const texture_t Texture{GetTexture(t_TexName)};
 
   auto [min_x, max_x] = std::minmax({a.m_Pos.x, b.m_Pos.x, c.m_Pos.x});
   auto [min_y, max_y] = std::minmax({a.m_Pos.y, b.m_Pos.y, c.m_Pos.y});
@@ -77,9 +75,9 @@ void RenderTri(Context& t_Context,
                 {glm::vec3(min_x, min_y, 1.f), glm::vec3(max_x, min_y, 1.f),
                  glm::vec3(max_x, max_y, 1.f), glm::vec3(min_x, max_y, 1.f)});
   */
-  for (int y = min_y; y <= max_y; y++) {
-    int row = y * t_Context.GetWidth();
 
+  for (int y = min_y; y <= max_y; y++) {
+    int Row = y * t_Context.GetWidth();
     bool Outside{true};
 
     for (int x = min_x; x <= max_x; x++) {
@@ -89,39 +87,29 @@ void RenderTri(Context& t_Context,
 
       if (bc0 <= 0.f && bc1 <= 0.f && bc2 <= 0.f) {
         Outside = false;
-
         bc0 *= full, bc1 *= full, bc2 *= full;
 
-        float W = 1.f / (a.m_Pos.w * bc0 + b.m_Pos.w * bc1 + c.m_Pos.w * bc2);
-        float Z =
+        float w = 1.f / (a.m_Pos.w * bc0 + b.m_Pos.w * bc1 + c.m_Pos.w * bc2);
+        float z =
             glm::clamp((a.m_Pos.z * bc0 + b.m_Pos.z * bc1 + c.m_Pos.z * bc2) *
-                           W * t_InverseFar,
+                           w * t_InverseFar,
                        0.f, 1.f);
 
-        if (t_Context.DepthBuffer[row + x] <= Z) {
+        if (t_Context.DepthBuffer[Row + x] <= z) {
           continue;
         }
 
         float u = std::fabs(bc0 * a.m_UV.x + bc1 * b.m_UV.x + bc2 * c.m_UV.x) *
-                  W,
+                  w,
               v = std::fabs(bc0 * a.m_UV.y + bc1 * b.m_UV.y + bc2 * c.m_UV.y) *
-                  W;
-
-        unsigned int Loc{
-            static_cast<unsigned int>(Texture->GetHeight() * (v - long(v))) *
-                Texture->GetWidth() +
-            static_cast<unsigned int>(Texture->GetWidth() * (u - long(u)))};
-
-        uint32_t Pixel{Texture->Data[glm::clamp(
-            Loc, (unsigned int)0,
-            Texture->GetWidth() * Texture->GetHeight() - 1)]};
+                  w;
 
         float Light{
             glm::clamp(bc0 * a.m_Light + bc1 * b.m_Light + bc2 * c.m_Light,
                        AMBIENT_INTENSITY, 1.f)};
 
-        t_Context.ColorBuffer[row + x] = ModUint32(Pixel, Light);
-        t_Context.DepthBuffer[row + x] = Z;
+        t_Shader(t_Context, t_Texture, glm::vec4(x, y, z, w), glm::vec2(u, v),
+                 Light);
       }
 
       else {

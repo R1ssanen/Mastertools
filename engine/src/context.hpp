@@ -8,9 +8,10 @@ class Context {
  public:
   SDL_Window* Window{nullptr};
   SDL_Renderer* Renderer{nullptr};
-  SDL_Texture* TargetTexture{nullptr};
+  SDL_Texture* RenderTexture{nullptr};
 
   uint32_t* ColorBuffer{nullptr};
+  uint32_t* TransparentBuffer{nullptr};
   double* DepthBuffer{nullptr};
 
   const int& GetWidth() const { return m_Spec.w; }
@@ -20,19 +21,22 @@ class Context {
   void SetSpec(const SDL_DisplayMode& value) { m_Spec = value; }
 
   const SDL_Rect& GetViewport() const { return m_Viewport; }
-  void SetViewport(int x, int y, int width, int height) {
-    m_Viewport = SDL_Rect{x, y, width, height};
+  void SetViewport(int t_X, int t_Y, int t_Width, int t_Height) {
+    m_Viewport = SDL_Rect{t_X, t_Y, t_Width, t_Height};
   }
 
   void Update();
+  void Clear();
 
   Context();
   ~Context() {
     delete[] ColorBuffer;
     delete[] DepthBuffer;
+    delete[] TransparentBuffer;
+
     SDL_DestroyWindow(Window);
     SDL_DestroyRenderer(Renderer);
-    SDL_DestroyTexture(TargetTexture);
+    SDL_DestroyTexture(RenderTexture);
   };
 
  private:

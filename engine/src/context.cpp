@@ -30,22 +30,34 @@ Context::Context() {
 
   Renderer = SDL_CreateRenderer(
       Window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
-  TargetTexture =
+  RenderTexture =
       SDL_CreateTexture(Renderer, SDL_PIXELFORMAT_RGBA8888,
                         SDL_TEXTUREACCESS_STREAMING, TargetWidth, TargetHeight);
 
+  // SDL_SetTextureScaleMode(TargetTexture, SDL_ScaleModeLinear);
+
   ColorBuffer = new uint32_t[TargetWidth * TargetHeight];
+  TransparentBuffer = new uint32_t[TargetWidth * TargetHeight];
   DepthBuffer = new double[TargetWidth * TargetHeight];
 }
 
 void Context::Update() {
-  SDL_UpdateTexture(TargetTexture, nullptr, ColorBuffer,
+  SDL_UpdateTexture(RenderTexture, nullptr, ColorBuffer,
                     GetWidth() * sizeof(uint32_t));
-  SDL_RenderCopy(Renderer, TargetTexture, nullptr, &m_Viewport);
+  SDL_SetTextureBlendMode(RenderTexture, SDL_BLENDMODE_NONE);
+  SDL_RenderCopy(Renderer, RenderTexture, nullptr, &m_Viewport);
+
+  SDL_UpdateTexture(RenderTexture, nullptr, TransparentBuffer,
+                    GetWidth() * sizeof(uint32_t));
+  SDL_SetTextureBlendMode(RenderTexture, SDL_BLENDMODE_ADD);
+  SDL_RenderCopy(Renderer, RenderTexture, nullptr, &m_Viewport);
 
   SDL_RenderPresent(Renderer);
+}
 
+void Context::Clear() {
   std::fill_n(ColorBuffer, m_Spec.w * m_Spec.h, 0x00000000);
+  std::fill_n(TransparentBuffer, m_Spec.w * m_Spec.h, 0x00000000);
   std::fill_n(DepthBuffer, m_Spec.w * m_Spec.h, INFINITY);
 }
 

@@ -3,6 +3,8 @@
 #include <initializer_list>
 
 #include "context.hpp"
+#include "shader.hpp"
+#include "texture.hpp"
 #include "vertex.hpp"
 
 namespace core {
@@ -23,7 +25,8 @@ inline float Edge(float ax, float ay, float bx, float by, float cx, float cy) {
 
 void RenderTri(Context& t_Context,
                const Tri& t_Tri,
-               const std::string& t_TexName,
-               float t_InverseFar);
+               const texture_t& t_Texture,
+               float t_InverseFar,
+               const shader_t& t_Shader);
 
 }  // namespace core

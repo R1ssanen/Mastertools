@@ -10,7 +10,7 @@ class Object {
   Object() = default;
   ~Object() = default;
 
-  Object(const std::vector<Mesh>& t_Meshes,
+  Object(const mesh_vector_t& t_Meshes,
          const glm::vec3& t_Pos = glm::vec3(0.f),
          const glm::vec3& t_Angle = glm::vec3(0.f),
          const glm::vec3& t_Scale = glm::vec3(1.f));
@@ -23,17 +23,11 @@ class Object {
   glm::mat4 GetRotation(float t_DeltaTime = 0.f) const;
   glm::mat4 GetTranslation() const;
 
-  const std::vector<Mesh>& GetMeshes() const;
+  const mesh_vector_t& GetMeshes() const;
 
  private:
-  std::vector<Mesh> m_Meshes;
+  mesh_vector_t m_Meshes;
   glm::vec3 m_Pos{0.f}, m_Angle{0.f}, m_Scale{1.f};
 };
-
-std::vector<Mesh> LoadMeshOBJ(const std::string& t_Directory,
-                              const std::string& t_Name);
-
-Object rapidobj_LoadAssetOBJ(const std::string& t_Directory,
-                             const std::string& t_Name);
 
 }  // namespace core

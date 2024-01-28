@@ -1,19 +1,8 @@
 {
   "map": "default.map",
-  "camera": {
-    "pos": [
-      0,
-      0,
-      0
-    ],
-    "angle": [
-      0,
-      0,
-      0
-    ],
-    "fov": 90,
-    "near": 0.05,
-    "far": 100
+  "skybox": {
+    "directory": "../../engine/builtins/",
+    "file": "skybox.obj"
   },
   "objects": [
     {
@@ -22,21 +11,19 @@
           "directory": "../../resources/assets/home/",
           "file": "home.obj"
         }
+      ]
+    },
+    {
+      "assets": [
+        {
+          "directory": "../../resources/meshes/",
+          "file": "teapot.obj"
+        }
       ],
       "pos": [
         0,
-        0,
+        -1,
         0
-      ],
-      "angle": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
       ]
     }
   ],
@@ -48,7 +35,7 @@
           -1.2,
           0
         ],
-        "intensity": 1.25
+        "intensity": 1.5
       }
     ],
     "directional": []

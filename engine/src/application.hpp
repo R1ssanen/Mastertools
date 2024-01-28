@@ -3,6 +3,7 @@
 #include "camera.hpp"
 #include "context.hpp"
 #include "light.hpp"
+#include "mesh.hpp"
 #include "object.hpp"
 #include "skybox.hpp"
 #include "srpch.hpp"
@@ -32,13 +33,13 @@ class Application {
   Application() = default;
 
   inline static Application* m_Instance{nullptr};
+  Context m_Context;
+  Timer m_Timer;
 
   std::string m_MapName;
   bool m_Running{true}, m_Wireframe{false};
 
-  Context m_Context;
   Camera m_Camera;
-  Timer m_Timer;
   Skybox m_Skybox;
 
   std::vector<Object> m_Objects;

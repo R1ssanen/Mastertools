@@ -27,13 +27,12 @@ std::array<uint8_t, 4> UnpackUint32(const uint32_t& t_Color) {
   return std::array<uint8_t, 4>{Color.x, Color.y, Color.z, Color.w};
 }
 
-float AsFloat(const uint32_t& t_Color, Part t_ColorMap) {
-  return static_cast<float>(t_Color & static_cast<uint32_t>(t_ColorMap)) /
-         255.f;
+float AsFloat(const uint32_t& t_Color, ColorPart t_ColorMask) {
+  return (t_Color & static_cast<uint32_t>(t_ColorMask)) / 255.f;
 }
 
-uint8_t AsUint8(const uint32_t& t_Color, Part t_ColorMap) {
-  return t_Color & static_cast<uint32_t>(t_ColorMap);
+uint8_t AsUint8(const uint32_t& t_Color, ColorPart t_ColorMask) {
+  return t_Color & static_cast<uint32_t>(t_ColorMask);
 }
 
 uint32_t BlendUint32(const uint32_t& t_ColorA,
@@ -52,7 +51,7 @@ uint32_t AverageUint32(const uint32_t& t_ColorA, const uint32_t& t_ColorB) {
   return glm::packUint4x8((ColorA + ColorB) * 0.5f);
 }
 
-uint32_t ModUint32(const uint32_t& t_Color, float t_Scalar) {
+uint32_t ModRGB(const uint32_t& t_Color, float t_Scalar) {
   glm::fvec4 Color{glm::unpackUint4x8(t_Color)};
   return glm::packUint4x8(Color * t_Scalar);
 }

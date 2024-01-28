@@ -14,15 +14,11 @@
 
 namespace core {
 
-Skybox::Skybox(const std::string& t_MeshDirectory,
-               const std::string& t_MeshName,
-               const std::string& t_TexturePath)
-    : m_Mesh{LoadMeshOBJ(t_MeshDirectory, t_MeshName)[0]},
-      m_TexName{t_TexturePath} {}
+Skybox::Skybox(const std::shared_ptr<Mesh>& t_Mesh) : m_Mesh{t_Mesh} {}
 
 std::vector<Tri> Skybox::Transform(const Camera& t_Camera,
                                    const Context& t_Context) {
-  std::vector<Vertex> TransVertices{m_Mesh.GetVertices()};
+  std::vector<Vertex> TransVertices{m_Mesh->GetVertices()};
   std::vector<Tri> TrianglesOut;
 
   glm::mat4 MatViewProjection{
@@ -35,7 +31,7 @@ std::vector<Tri> Skybox::Transform(const Camera& t_Camera,
                    Vertex.m_Pos;
   }
 
-  for (size_t ID = 0; ID < m_Mesh.GetIndices().size(); ID += 3) {
+  for (size_t ID = 0; ID < m_Mesh->GetIndices().size(); ID += 3) {
     std::vector<Tri> ClipTris{FrustumClipTriangle(
         Tri{TransVertices[ID], TransVertices[ID + 1], TransVertices[ID + 2]},
         t_Camera.GetFrustum())};
@@ -76,7 +72,6 @@ void Skybox::Render(const Camera& t_Camera, Context& t_Context) {
 
 void Skybox::RenderTri(Context& t_Context, const Tri& t_Tri) {
   const auto [a, b, c] = t_Tri;
-  const texture_t Texture{GetTexture(m_TexName)};
 
   auto [min_x, max_x] = std::minmax({a.m_Pos.x, b.m_Pos.x, c.m_Pos.x});
   auto [min_y, max_y] = std::minmax({a.m_Pos.y, b.m_Pos.y, c.m_Pos.y});
@@ -117,13 +112,14 @@ void Skybox::RenderTri(Context& t_Context, const Tri& t_Tri) {
               v = std::fabs(bc0 * a.m_UV.y + bc1 * b.m_UV.y + bc2 * c.m_UV.y) *
                   W;
 
-        unsigned int Loc{static_cast<unsigned int>(Texture->GetHeight() * v) *
-                             Texture->GetWidth() +
-                         static_cast<unsigned int>(Texture->GetWidth() * u)};
+        unsigned int Loc{
+            static_cast<unsigned int>(m_Mesh->Texture->GetHeight() * v) *
+                m_Mesh->Texture->GetWidth() +
+            static_cast<unsigned int>(m_Mesh->Texture->GetWidth() * u)};
 
-        uint32_t Pixel{Texture->Data[glm::clamp(
+        uint32_t Pixel{m_Mesh->Texture->Data[glm::clamp(
             Loc, (unsigned int)0,
-            Texture->GetWidth() * Texture->GetHeight() - 1)]};
+            m_Mesh->Texture->GetWidth() * m_Mesh->Texture->GetHeight() - 1)]};
 
         t_Context.ColorBuffer[row + x] = Pixel;
       }

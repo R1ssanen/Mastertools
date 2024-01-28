@@ -17,11 +17,11 @@ Vertex IntersectVertexLine(const Plane& t_Plane,
       0.f, 1.f);
 
   glm::vec4 Pos = A.m_Pos + (B.m_Pos - A.m_Pos) * T,
-            Normal = A.m_Normal + (B.m_Normal - A.m_Normal) * T;
+            Normal = glm::normalize(A.m_Normal + (B.m_Normal - A.m_Normal) * T);
   glm::vec2 UV = A.m_UV + (B.m_UV - A.m_UV) * T;
   float Light = std::min(A.m_Light + (B.m_Light - A.m_Light) * T, 1.f);
 
-  return Vertex(Pos, glm::fastNormalize(Normal), UV, Light);
+  return Vertex(Pos, Normal, UV, Light);
 }
 
 glm::vec3 IntersectLine(const Plane& t_Plane,

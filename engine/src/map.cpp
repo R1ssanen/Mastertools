@@ -37,11 +37,14 @@ void Application::LoadMap(const std::string& t_Path) {
     }
 
     else if (Key == "camera") {
-      auto v = Element["pos"];
-      m_Camera =
-          Camera(JsonArrayToVec3(Element["pos"]),
-                 JsonArrayToVec3(Element["angle"]), Element["fov"].get<float>(),
-                 Element["near"].get<float>(), Element["far"].get<float>());
+      m_Camera = Camera(
+          Element.contains("pos") ? JsonArrayToVec3(Element["pos"])
+                                  : glm::vec3(0.f),
+          Element.contains("angle") ? JsonArrayToVec3(Element["angle"])
+                                    : glm::vec3(0.f),
+          Element.contains("fov") ? Element["fov"].get<float>() : 90.f,
+          Element.contains("near") ? Element["near"].get<float>() : 0.05f,
+          Element.contains("far") ? Element["far"].get<float>() : 100.f);
     }
 
     else if (Key == "lights") {
@@ -49,28 +52,39 @@ void Application::LoadMap(const std::string& t_Path) {
         m_PointLights.push_back(PointLight(JsonArrayToVec3(Light["pos"]),
                                            Light["intensity"].get<float>()));
       }
+    }
 
+    else if (Key == "skybox") {
+      m_Skybox = Skybox(LoadMeshOBJ(Element["directory"].get<std::string>(),
+                                    Element["file"].get<std::string>())[0]);
     }
 
     else if (Key == "objects") {
       for (const auto& Object : Element) {
-        std::vector<Mesh> MeshesOut;
+        mesh_vector_t MeshesOut;
 
         for (const auto& Asset : Object["assets"]) {
-          const std::vector<Mesh> LoadedMeshes{
-              LoadMeshOBJ(Asset["directory"].get<std::string>(),
-                          Asset["file"].get<std::string>())};
+          const mesh_vector_t LoadedMeshes{LoadMeshOBJ(
+              Asset["directory"].get<std::string>(),
+              Asset["file"].get<std::string>(),
+              Asset.contains("doublesided") ? !Asset["doublesided"].get<bool>()
+                                            : true)};
 
           MeshesOut.insert(MeshesOut.end(), LoadedMeshes.begin(),
                            LoadedMeshes.end());
         }
 
-        core::Object ObjectOut(MeshesOut, JsonArrayToVec3(Object["pos"]),
-                               JsonArrayToVec3(Object["angle"]),
-                               JsonArrayToVec3(Object["scale"]));
+        core::Object ObjectOut(
+            MeshesOut,
+            Object.contains("pos") ? JsonArrayToVec3(Object["pos"])
+                                   : glm::vec3(0.f),
+            Object.contains("angle") ? JsonArrayToVec3(Object["angle"])
+                                     : glm::vec3(0.f),
+            Object.contains("scale") ? JsonArrayToVec3(Object["scale"])
+                                     : glm::vec3(1.f));
 
         m_Objects.push_back(ObjectOut);
-      };
+      }
     }
 
     else [[unlikely]] {
@@ -79,7 +93,6 @@ void Application::LoadMap(const std::string& t_Path) {
   }
 
   File.close();
-
   std::clog << "Map loading complete.\n";
 }
 

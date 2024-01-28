@@ -24,7 +24,7 @@ void Application::Init() {
   LoadMap();
 
   SDL_AddEventWatch(ActionCallback, this);
-  // SDL_SetRelativeMouseMode(SDL_TRUE);
+  SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 void Application::LogPerformance() {
@@ -41,14 +41,9 @@ void Application::Run() {
     glm::mat4 MatView{m_Camera.GetMatView()};
     glm::mat4 MatProjection{
         m_Camera.GetMatProjection(m_Context.GetWidth(), m_Context.GetHeight())};
+    glm::mat4 MatViewProjection{MatProjection * MatView};
 
-    std::vector<PointLight> ViewspacePointLights;
-    std::transform(m_PointLights.begin(), m_PointLights.end(),
-                   std::back_inserter(ViewspacePointLights),
-                   [MatView](const PointLight& Light) {
-                     return PointLight(MatView * glm::vec4(Light.GetPos(), 1.f),
-                                       Light.GetIntensity());
-                   });
+    std::vector<DrawTri> TransparentTris;
 
     for (const Object& Object : m_Objects) {
       // Object.SetAngle(
@@ -56,25 +51,28 @@ void Application::Run() {
 
       glm::mat4 MatModel{Object.GetTranslation() * Object.GetRotation() *
                          Object.GetScale()};
-      glm::mat4 MatModelView{MatView * MatModel};
 
-      // std::vector<Tri> DrawTris;
-
-      for (const Mesh& Mesh : Object.GetMeshes()) {
-        std::vector<Vertex> TransVertices{Mesh.GetVertices()};
+      for (const std::shared_ptr<Mesh>& Mesh : Object.GetMeshes()) {
+        std::vector<Vertex> TransVertices{Mesh->GetVertices()};
 
         for (Vertex& Vertex : TransVertices) {
-          Vertex.m_Pos = MatModelView * Vertex.m_Pos;
-          Vertex.m_Normal = Object.GetRotation() * Vertex.m_Normal;
+          Vertex.m_Pos = MatModel * Vertex.m_Pos;
+          Vertex.m_Normal =
+              glm::normalize(Object.GetRotation() * Vertex.m_Normal);
 
-          for (const PointLight& Light : ViewspacePointLights) {
-            Vertex.m_Light += Light.GetLighting(Vertex);
+          for (const PointLight& Light : m_PointLights) {
+            glm::vec4 LightDirection{glm::vec4(Light.GetPos(), 1.f) -
+                                     Vertex.m_Pos};
+            float Lambert{glm::dot(Vertex.m_Normal, LightDirection)};
+
+            Vertex.m_Light +=
+                Light.GetLighting(Vertex) * (Lambert + 1.f) * 0.5f;
           }
 
-          Vertex.m_Pos = MatProjection * Vertex.m_Pos;
+          Vertex.m_Pos = MatViewProjection * Vertex.m_Pos;
         }
 
-        for (size_t ID = 0; ID < Mesh.GetIndices().size(); ID += 3) {
+        for (size_t ID = 0; ID < Mesh->GetIndices().size(); ID += 3) {
           std::vector<Tri> ClipTris{
               FrustumClipTriangle(Tri{TransVertices[ID], TransVertices[ID + 1],
                                       TransVertices[ID + 2]},
@@ -95,40 +93,40 @@ void Application::Run() {
                   (Vertex.m_Pos.y + 1.f) * 0.5f * m_Context.GetHeight();
             }
 
-            if (BackfaceCull(Tri)) {
+            if (Mesh->Texture->CullBackfaces() && BackfaceCull(Tri)) {
               continue;
             }
 
-            if (!m_Wireframe) {
-              RenderTri(m_Context, Tri, Mesh.GetTexName(),
-                        m_Camera.GetInverseFar());
-            } else {
+            else if (m_Wireframe) {
               DrawWireframe(m_Context,
                             {Tri[0].m_Pos, Tri[1].m_Pos, Tri[2].m_Pos});
+            }
+
+            else if (Mesh->Texture->IsTransparent()) {
+              TransparentTris.push_back(DrawTri{Tri, Mesh->Texture->GetName()});
+            }
+
+            else {
+              RenderTri(m_Context, Tri, Mesh->Texture, m_Camera.GetInverseFar(),
+                        OpaqueSTD);
             }
           }
         }
       }
+    }
 
-      /*std::sort(DrawTris.begin(), DrawTris.end(),
-                [](const Tri& t_First, const Tri& t_Second) {
-                  return (t_First[0].m_Pos.z + t_First[1].m_Pos.z +
-                          t_First[2].m_Pos.z) *
-                             glm::third<float>() >
-                         (t_Second[0].m_Pos.z + t_Second[1].m_Pos.z +
-                          t_Second[2].m_Pos.z) *
-                             glm::third<float>();
-                });
+    std::sort(TransparentTris.begin(), TransparentTris.end(),
+              DrawTri::BackToFront);
 
-      for (const Tri& Tri : DrawTris) {
-        RenderTri(m_Context, Tri, "../../engine/builtins/untextured.png",
-                  m_Camera.GetInverseFar());
-      }*/
+    for (const DrawTri& Tri : TransparentTris) {
+      RenderTri(m_Context, Tri.m_Tri, GetTexture(Tri.m_TexName),
+                m_Camera.GetInverseFar(), TransparentSTD);
     }
 
     m_Skybox.Render(m_Camera, m_Context);
 
     m_Context.Update();
+    m_Context.Clear();
     m_Timer.Tick();
   }
 }

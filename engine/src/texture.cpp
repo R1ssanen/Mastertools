@@ -8,22 +8,35 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+namespace {
+core::texture_t s_DefaultTexture{
+    core::NewTexture("../../engine/builtins/untextured.png", true, false)};
+}
+
 namespace core {
 
-Texture::Texture(uint32_t* t_Data, unsigned int t_Width, unsigned int t_Height)
-    : Data{t_Data}, m_Width{t_Width}, m_Height{t_Height} {}
+Texture::Texture(uint32_t* t_Data,
+                 const std::string& t_Name,
+                 unsigned int t_Width,
+                 unsigned int t_Height,
+                 bool t_Transparent,
+                 bool t_CullBackfaces)
+    : Data{t_Data},
+      m_Name{t_Name},
+      m_Width{t_Width},
+      m_Height{t_Height},
+      m_Transparent{t_Transparent},
+      m_CullBackfaces{t_CullBackfaces} {}
 
-const unsigned int& Texture::GetWidth() const {
-  return m_Width;
+unsigned int Texture::GetLocation(const glm::vec2& t_UV) {
+  return static_cast<unsigned int>(m_Height * (t_UV.y - long(t_UV.y))) *
+             m_Width +
+         static_cast<unsigned int>(m_Width * (t_UV.x - long(t_UV.x)));
 }
 
-const unsigned int& Texture::GetHeight() const {
-  return m_Height;
-}
-
-const bool TextureExists(const std::string& t_Name) {
-  return s_LoadedTextures.count(t_Name);
-}
+const uint32_t& Texture::Sample(const glm::vec2& t_UV) {
+  return Data[glm::clamp(GetLocation(t_UV), 0U, m_Width * m_Height - 1)];
+};
 
 void Texture::Save(const std::string t_Filename) const {
   uint8_t* Data8b = new uint8_t[m_Width * m_Height * 4];
@@ -45,9 +58,11 @@ void Texture::Save(const std::string t_Filename) const {
   delete[] Data8b;
 }
 
-void LoadTexture(const std::string& t_Path) {
-  if (TextureExists(t_Path)) {
-    return;
+const texture_t& NewTexture(const std::string& t_Path,
+                            bool t_Transparent,
+                            bool t_CullBackfaces) {
+  if (s_LoadedTextures.count(t_Path)) {
+    return s_LoadedTextures[t_Path];
   }
 
   int Format, Width, Height;
@@ -67,17 +82,20 @@ void LoadTexture(const std::string& t_Path) {
   }
 
   s_LoadedTextures[t_Path] =
-      std::make_shared<core::Texture>(std::move(Data32b), Width, Height);
+      std::make_shared<core::Texture>(std::move(Data32b), t_Path, Width, Height,
+                                      t_Transparent, t_CullBackfaces);
 
   stbi_image_free(Data8b);
+
+  return s_LoadedTextures[t_Path];
 }
 
-texture_t GetTexture(const std::string& t_Name) {
-  if (!TextureExists(t_Name)) {
-    LoadTexture(t_Name);
-  }
+const texture_t& GetTexture(const std::string& t_Name) {
+  return s_LoadedTextures[t_Name];
+}
 
-  return s_LoadedTextures.at(t_Name);
+const texture_t& GetDefaultTexture() {
+  return s_DefaultTexture;
 }
 
 }  // namespace core
