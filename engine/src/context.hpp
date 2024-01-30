@@ -11,7 +11,6 @@ class Context {
   SDL_Texture* RenderTexture{nullptr};
 
   uint32_t* ColorBuffer{nullptr};
-  uint32_t* TransparentBuffer{nullptr};
   double* DepthBuffer{nullptr};
 
   const int& GetWidth() const { return m_Spec.w; }
@@ -32,7 +31,6 @@ class Context {
   ~Context() {
     delete[] ColorBuffer;
     delete[] DepthBuffer;
-    delete[] TransparentBuffer;
 
     SDL_DestroyWindow(Window);
     SDL_DestroyRenderer(Renderer);

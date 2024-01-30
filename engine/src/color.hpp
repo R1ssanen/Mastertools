@@ -2,33 +2,21 @@
 
 #include "srpch.hpp"
 
+#define INVERSE_MAX_UINT8 1.f / 255.f
+
 namespace core {
 
-enum class ColorPart : uint32_t {
-  RED = 0xFF000000,
-  GREEN = 0x00FF0000,
-  BLUE = 0x0000FF00,
-  ALPHA = 0x000000FF
-};
+enum class Channel : uint8_t { RED = 24, GREEN = 16, BLUE = 8, ALPHA = 0 };
 
 uint32_t ToUint32(float r, float g, float b, float a = 1.f);
-uint32_t ToUint32(const glm::fvec3& vec);
-uint32_t ToUint32(const glm::fvec4& vec);
+uint32_t ToUint32(const glm::vec4& t_Color);
 
-std::array<uint8_t, 4> UnpackUint32(const uint32_t& t_Color);
-inline glm::vec3 Uint32ToVec3(const uint32_t& t_Color) {
-  auto [r, g, b, a] = UnpackUint32(t_Color);
-  return glm::vec3(r, g, b);
-}
+std::array<uint8_t, 4> UnpackToArray(const uint32_t& t_Color);
+glm::vec4 UnpackToVec4(const uint32_t& t_Color);
+uint8_t Get(const uint32_t& t_Color, Channel t_ColorChannel);
 
-float AsFloat(const uint32_t& t_Color, ColorPart t_ColorMask);
-uint8_t AsUint8(const uint32_t& t_Color, ColorPart t_ColorMask);
-
-uint32_t BlendUint32(const uint32_t& t_ColorA,
-                     const uint32_t& t_ColorB,
-                     float t_Scalar);
-uint32_t AverageUint32(const uint32_t& t_ColorA, const uint32_t& t_ColorB);
-
-uint32_t ModRGB(const uint32_t& t_Color, float t_Scalar);
+uint32_t BlendUint32(const uint32_t& A, const uint32_t& B, float t_Scalar);
+uint32_t AverageUint32(const uint32_t& A, const uint32_t& B);
+uint32_t ModUint32(const uint32_t& t_Color, float t_Scalar);
 
 }  // namespace core

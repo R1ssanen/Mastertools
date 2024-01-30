@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mesh.hpp"
 #include "srpch.hpp"
 #include "vertex.hpp"
 
@@ -22,5 +23,6 @@ class PointLight {
   glm::vec3 m_Pos{0.f};
   float m_Intensity{1.f};
 };
+
 
 }  // namespace core

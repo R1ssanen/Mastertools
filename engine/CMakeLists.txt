@@ -17,6 +17,7 @@ add_executable(${PROJECT_NAME}
   src/callbacks.cpp
   src/light.cpp
   src/map.cpp
+  src/defaults.cpp
 )
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC "deps/srpch.hpp")
@@ -38,7 +39,7 @@ find_library(SDL_FONT SDL2_ttf NAMES SDL2_ttf libSDL2_ttf)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL})
 
 IF(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE EQUAL Debug)
-  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -g -flto=auto -pg -lpthread)
+  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -g -flto=auto -pg -march=native)
 ELSE()
-  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -O3 -flto=auto -pg -lpthread)
+  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -O3 -flto=auto -march=native -mavx2 -fomit-frame-pointer)
 ENDIF()

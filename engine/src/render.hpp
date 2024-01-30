@@ -23,6 +23,19 @@ inline float Edge(float ax, float ay, float bx, float by, float cx, float cy) {
   return (cx - ax) * (by - ay) - (cy - ay) * (bx - ax);
 }
 
+inline float DoubleTriangleArea(float ax,
+                                float ay,
+                                float bx,
+                                float by,
+                                float cx,
+                                float cy) {
+  return ax * (by - cy) + bx * (cy - ay) + cx * (ay - by);
+}
+
+inline glm::vec3 CalculateMatrixRow(const glm::vec3& A, const glm::vec3& B) {
+  return glm::vec3(A.x * B.y - B.x * A.y, A.y - B.y, B.x - A.x);
+}
+
 void RenderTri(Context& t_Context,
                const Tri& t_Tri,
                const texture_t& t_Texture,

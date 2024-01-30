@@ -22,7 +22,7 @@ inline void OpaqueSTD(Context& t_Context,
 
   unsigned int Loc{
       static_cast<unsigned int>(t_Pos.y * t_Context.GetWidth() + t_Pos.x)};
-  t_Context.ColorBuffer[Loc] = ModRGB(Pixel, t_Light);
+  t_Context.ColorBuffer[Loc] = ModUint32(Pixel, t_Light);
   t_Context.DepthBuffer[Loc] = t_Pos.z;
 }
 
@@ -32,7 +32,7 @@ inline void TransparentSTD(Context& t_Context,
                            const glm::vec2& t_UV,
                            float t_Light) {
   uint32_t Pixel{t_Texture->Sample(t_UV)};
-  uint8_t Alpha{AsUint8(Pixel, ColorPart::ALPHA)};
+  uint8_t Alpha{Get(Pixel, Channel::ALPHA)};
 
   unsigned int Loc{
       static_cast<unsigned int>(t_Pos.y * t_Context.GetWidth() + t_Pos.x)};
@@ -42,13 +42,14 @@ inline void TransparentSTD(Context& t_Context,
       return;
 
     case 255:
-      t_Context.TransparentBuffer[Loc] = ModRGB(Pixel, t_Light);
+      t_Context.ColorBuffer[Loc] = ModUint32(Pixel, t_Light);
       t_Context.DepthBuffer[Loc] = t_Pos.z;
       return;
 
     default:
-      t_Context.TransparentBuffer[Loc] = BlendUint32(
-          ModRGB(Pixel, t_Light), t_Context.ColorBuffer[Loc], Alpha / 255.f);
+      t_Context.ColorBuffer[Loc] =
+          BlendUint32(ModUint32(Pixel, t_Light), t_Context.ColorBuffer[Loc],
+                      Alpha * INVERSE_MAX_UINT8);
       return;
   }
 }

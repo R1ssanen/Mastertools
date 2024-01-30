@@ -29,6 +29,10 @@ const std::vector<unsigned int>& Mesh::GetIndices() const {
 mesh_vector_t LoadMeshOBJ(const std::string& t_Directory,
                           const std::string& t_Name,
                           bool t_CullBackfaces) {
+  if (s_LoadedAssets.count(t_Directory + t_Name)) {
+    return s_LoadedAssets[t_Directory + t_Name];
+  }
+
   objl::Loader Loader;
 
   if (!Loader.LoadFile(t_Directory + t_Name)) [[unlikely]] {
@@ -64,18 +68,20 @@ mesh_vector_t LoadMeshOBJ(const std::string& t_Directory,
     }
 
     const bool TextureExists{!ObjlMesh.MeshMaterial.map_Kd.empty()};
-    const bool Transparent{ObjlMesh.MeshMaterial.d != 1.f};
+    const bool Transparent{ObjlMesh.MeshMaterial.d < 1.f};
 
     texture_t Texture{
-        TextureExists ? NewTexture(t_Directory + ObjlMesh.MeshMaterial.map_Kd,
-                                   Transparent, t_CullBackfaces)
-                      : GetDefaultTexture()};
+        TextureExists
+            ? NewTexture(t_Directory + ObjlMesh.MeshMaterial.map_Kd,
+                         Transparent, Transparent ? false : t_CullBackfaces)
+            : GetDefaultTexture()};
 
     Meshes.push_back(std::make_shared<Mesh>(Vertices, ObjlMesh.Indices, Texture,
                                             MassCenter, MaxDistance));
   }
 
-  return Meshes;
+  s_LoadedAssets[t_Directory + t_Name] = Meshes;
+  return s_LoadedAssets[t_Directory + t_Name];
 }
 
 }  // namespace core

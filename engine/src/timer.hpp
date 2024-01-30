@@ -20,6 +20,8 @@ class Timer {
     return m_TimeElapsed / static_cast<double>(m_FramesElapsed);
   }
 
+  const size_t& Frames() const { return m_FramesElapsed; }
+
   void Tick() {
     const auto TimeNow{std::chrono::high_resolution_clock::now()};
 

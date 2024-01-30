@@ -17,6 +17,7 @@ class Camera {
 
   glm::mat4 GetMatView() const;
   glm::mat4 GetMatProjection(float width, float height) const;
+  glm::mat4 GetMatLookAt(const glm::vec3& t_OriginalPos) const;
 
   const glm::vec3& GetPos() const { return m_Pos; }
   void SetPos(const glm::vec3& t_Val) { m_Pos = t_Val; }

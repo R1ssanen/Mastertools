@@ -28,7 +28,7 @@ struct DrawTri {
   Tri m_Tri;
   std::string m_TexName;
 
-  static bool FrontToBack(const DrawTri& t_First, const DrawTri& t_Second) {
+  static bool FarToClose(const DrawTri& t_First, const DrawTri& t_Second) {
     return (t_First.m_Tri[0].m_Pos.z + t_First.m_Tri[1].m_Pos.z +
             t_First.m_Tri[2].m_Pos.z) *
                glm::third<float>() >
@@ -37,8 +37,8 @@ struct DrawTri {
                glm::third<float>();
   }
 
-  static bool BackToFront(const DrawTri& t_First, const DrawTri& t_Second) {
-    return !FrontToBack(t_First, t_Second);
+  static bool CloseToFar(const DrawTri& t_First, const DrawTri& t_Second) {
+    return !FarToClose(t_First, t_Second);
   }
 };
 

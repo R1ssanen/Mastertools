@@ -8,11 +8,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-namespace {
-core::texture_t s_DefaultTexture{
-    core::NewTexture("../../engine/builtins/untextured.png", true, false)};
-}
-
 namespace core {
 
 Texture::Texture(uint32_t* t_Data,
@@ -25,6 +20,7 @@ Texture::Texture(uint32_t* t_Data,
       m_Name{t_Name},
       m_Width{t_Width},
       m_Height{t_Height},
+      m_Size{t_Width * t_Height},
       m_Transparent{t_Transparent},
       m_CullBackfaces{t_CullBackfaces} {}
 
@@ -35,7 +31,7 @@ unsigned int Texture::GetLocation(const glm::vec2& t_UV) {
 }
 
 const uint32_t& Texture::Sample(const glm::vec2& t_UV) {
-  return Data[glm::clamp(GetLocation(t_UV), 0U, m_Width * m_Height - 1)];
+  return Data[glm::clamp(GetLocation(t_UV), 0U, m_Size - 1)];
 };
 
 void Texture::Save(const std::string t_Filename) const {
@@ -43,7 +39,7 @@ void Texture::Save(const std::string t_Filename) const {
   std::fill_n(Data8b, m_Width * m_Height * 4, ToUint32(1.f, 0.f, 0.f));
 
   for (size_t i = 0; i < m_Width * m_Height; i++) {
-    auto [r, g, b, a] = UnpackUint32(Data[i]);
+    auto [r, g, b, a] = UnpackToArray(Data[i]);
     Data8b[i * 4] = r;
     Data8b[i * 4 + 1] = g;
     Data8b[i * 4 + 2] = b;
@@ -92,10 +88,6 @@ const texture_t& NewTexture(const std::string& t_Path,
 
 const texture_t& GetTexture(const std::string& t_Name) {
   return s_LoadedTextures[t_Name];
-}
-
-const texture_t& GetDefaultTexture() {
-  return s_DefaultTexture;
 }
 
 }  // namespace core

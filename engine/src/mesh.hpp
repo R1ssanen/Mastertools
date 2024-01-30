@@ -28,10 +28,15 @@ class Mesh {
   float m_BoundingRadius{0.f};
 };
 
-using mesh_vector_t = std::vector<std::shared_ptr<Mesh>>;
+using mesh_t = std::shared_ptr<Mesh>;
+using mesh_vector_t = std::vector<mesh_t>;
 
 mesh_vector_t LoadMeshOBJ(const std::string& t_Directory,
                           const std::string& t_Name,
                           bool t_CullBackfaces = true);
 
 }  // namespace core
+
+namespace {
+std::unordered_map<std::string, core::mesh_vector_t> s_LoadedAssets;
+}

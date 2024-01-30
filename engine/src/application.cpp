@@ -2,6 +2,7 @@
 
 #include "callbacks.hpp"
 #include "culling.hpp"
+#include "defaults.hpp"
 #include "keys.hpp"
 #include "light.hpp"
 #include "mesh.hpp"
@@ -17,10 +18,12 @@ Application* Application::GetInstance() {
   if (!m_Instance) {
     m_Instance = new Application();
   }
+
   return m_Instance;
 }
 
 void Application::Init() {
+  InitDefaults();
   LoadMap();
 
   SDL_AddEventWatch(ActionCallback, this);
@@ -34,6 +37,8 @@ void Application::LogPerformance() {
 
 void Application::Run() {
   while (m_Running) {
+    // m_PointLights[0].SetPos(m_Camera.GetPos());
+
     SDL_PumpEvents();
     m_Camera.HandleMovement();
     m_Camera.HandleRotation();
@@ -46,13 +51,10 @@ void Application::Run() {
     std::vector<DrawTri> TransparentTris;
 
     for (const Object& Object : m_Objects) {
-      // Object.SetAngle(
-      //     glm::vec3(m_Camera.GetAngle().y, 0.f, m_Camera.GetAngle().x));
-
       glm::mat4 MatModel{Object.GetTranslation() * Object.GetRotation() *
                          Object.GetScale()};
 
-      for (const std::shared_ptr<Mesh>& Mesh : Object.GetMeshes()) {
+      for (const mesh_t& Mesh : Object.GetMeshes()) {
         std::vector<Vertex> TransVertices{Mesh->GetVertices()};
 
         for (Vertex& Vertex : TransVertices) {
@@ -81,25 +83,30 @@ void Application::Run() {
           for (Tri& Tri : ClipTris) {
             for (Vertex& Vertex : Tri) {
               Vertex.m_Pos.w = 1.f / Vertex.m_Pos.w;
-
               Vertex.m_Pos.x *= Vertex.m_Pos.w;
               Vertex.m_Pos.y *= Vertex.m_Pos.w;
-              Vertex.m_Pos.z *= Vertex.m_Pos.w;
-              Vertex.m_UV *= Vertex.m_Pos.w;
-
-              Vertex.m_Pos.x =
-                  (Vertex.m_Pos.x + 1.f) * 0.5f * m_Context.GetWidth();
-              Vertex.m_Pos.y =
-                  (Vertex.m_Pos.y + 1.f) * 0.5f * m_Context.GetHeight();
             }
 
             if (Mesh->Texture->CullBackfaces() && BackfaceCull(Tri)) {
               continue;
             }
 
-            else if (m_Wireframe) {
+            for (Vertex& Vertex : Tri) {
+              Vertex.m_Pos.x =
+                  (Vertex.m_Pos.x + 1.f) * 0.5f * m_Context.GetWidth();
+              Vertex.m_Pos.y =
+                  (Vertex.m_Pos.y + 1.f) * 0.5f * m_Context.GetHeight();
+
+              Vertex.m_Pos.z *= Vertex.m_Pos.w;
+              Vertex.m_UV *= Vertex.m_Pos.w;
+            }
+
+            if (m_Wireframe) {
+              uint32_t Color{Mesh->Texture->IsTransparent() ? 0xFF0000FF
+                                                            : 0x00FF00FF};
               DrawWireframe(m_Context,
-                            {Tri[0].m_Pos, Tri[1].m_Pos, Tri[2].m_Pos});
+                            {Tri[0].m_Pos, Tri[1].m_Pos, Tri[2].m_Pos}, true,
+                            Color);
             }
 
             else if (Mesh->Texture->IsTransparent()) {
@@ -115,15 +122,63 @@ void Application::Run() {
       }
     }
 
+    /*const mesh_t LightOverlay{core::GetDefaultLightOverlay()};
+    for (const PointLight& Light : m_PointLights) {
+      std::vector<Vertex> TransVertices{LightOverlay->GetVertices()};
+
+      glm::mat4 MatModel{glm::translate(m_Camera.GetMatLookAt(Light.GetPos()),
+                                        Light.GetPos())};
+
+      for (Vertex& Vertex : TransVertices) {
+        Vertex.m_Pos = MatViewProjection * MatModel * Vertex.m_Pos;
+        Vertex.m_Light = 1.f;
+      }
+
+      for (size_t ID = 0; ID < LightOverlay->GetIndices().size(); ID += 3) {
+        std::vector<Tri> ClipTris{
+            FrustumClipTriangle(Tri{TransVertices[ID], TransVertices[ID + 1],
+                                    TransVertices[ID + 2]},
+                                m_Camera.GetFrustum())};
+
+        for (Tri& Tri : ClipTris) {
+          for (Vertex& Vertex : Tri) {
+            Vertex.m_Pos.w = 1.f / Vertex.m_Pos.w;
+            Vertex.m_Pos.x *= Vertex.m_Pos.w;
+            Vertex.m_Pos.y *= Vertex.m_Pos.w;
+            Vertex.m_Pos.z *= Vertex.m_Pos.w;
+
+            Vertex.m_UV *= Vertex.m_Pos.w;
+
+            Vertex.m_Pos.x =
+                (Vertex.m_Pos.x + 1.f) * 0.5f * m_Context.GetWidth();
+            Vertex.m_Pos.y =
+                (Vertex.m_Pos.y + 1.f) * 0.5f * m_Context.GetHeight();
+          }
+
+          if (m_Wireframe) {
+            DrawWireframe(m_Context, {Tri[0].m_Pos, Tri[1].m_Pos, Tri[2].m_Pos},
+                          true, 0xFF0000FF);
+          }
+
+          else {
+            TransparentTris.push_back(
+                DrawTri{Tri, LightOverlay->Texture->GetName()});
+          }
+        }
+      }
+    }
+
+    */
+
+    m_Skybox.Render(m_Camera, m_Context);
+
     std::sort(TransparentTris.begin(), TransparentTris.end(),
-              DrawTri::BackToFront);
+              DrawTri::FarToClose);
 
     for (const DrawTri& Tri : TransparentTris) {
       RenderTri(m_Context, Tri.m_Tri, GetTexture(Tri.m_TexName),
                 m_Camera.GetInverseFar(), TransparentSTD);
     }
-
-    m_Skybox.Render(m_Camera, m_Context);
 
     m_Context.Update();
     m_Context.Clear();

@@ -31,6 +31,7 @@ class Texture {
  private:
   std::string m_Name;
   unsigned int m_Width{0}, m_Height{0};
+  unsigned int m_Size{0};
 
   bool m_Transparent{false}, m_CullBackfaces{true};
 };

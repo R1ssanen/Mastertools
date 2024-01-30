@@ -76,4 +76,8 @@ glm::mat4 Camera::GetMatProjection(float width, float height) const {
   return glm::perspectiveFovRH(m_FOV, width, height, m_Near, m_Far);
 }
 
+glm::mat4 Camera::GetMatLookAt(const glm::vec3& t_OriginalPos) const {
+  return glm::eulerAngleYX(m_Angle.x, m_Angle.y);
+}
+
 }  // namespace core
