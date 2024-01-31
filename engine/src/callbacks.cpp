@@ -8,7 +8,7 @@
 namespace core {
 
 int ActionCallback(void* t_UserData, SDL_Event* t_Event) {
-  Application* App{static_cast<Application*>(t_UserData)};
+  auto App{static_cast<core::App*>(t_UserData)};
 
   if (GetKey(SDL_SCANCODE_Q) || t_Event->type == SDL_QUIT) {
     App->SetRunning(false);
@@ -30,6 +30,10 @@ int ActionCallback(void* t_UserData, SDL_Event* t_Event) {
 
   if (GetKey(SDL_SCANCODE_LCTRL) && GetKey(SDL_SCANCODE_S)) {
     App->LoadMap();
+  }
+
+  if (GetKey(SDL_SCANCODE_DELETE)) {
+    App->SetShowMipmaps(!App->GetShowMipmaps());
   }
 
   return 0;

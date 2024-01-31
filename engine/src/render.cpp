@@ -66,8 +66,9 @@ void RenderTri(Context& t_Context,
   min_y = glm::clamp<int>(min_y, 0, t_Context.GetHeight() - 1);
   max_y = glm::clamp<int>(max_y, 0, t_Context.GetHeight() - 1);
 
-  if (static_cast<unsigned int>(max_x - min_x)
-    * static_cast<unsigned int>(max_y - min_y) == 0) {
+  if (static_cast<unsigned>(max_x - min_x) *
+          static_cast<unsigned>(max_y - min_y) ==
+      0) {
     return;  // zero area triangle
   }
 

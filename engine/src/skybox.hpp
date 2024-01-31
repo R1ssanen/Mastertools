@@ -12,9 +12,9 @@ namespace core {
 
 class Skybox {
  public:
-  Skybox(const std::shared_ptr<Mesh>& t_Mesh =
-             LoadMeshOBJ("../../engine/builtins/", "skybox.obj")[0]);
   ~Skybox() = default;
+
+  Skybox(const mesh_t& t_Mesh) : m_Mesh{t_Mesh} {}
 
   void Render(const Camera& t_Camera, Context& t_Context);
 
@@ -25,7 +25,7 @@ class Skybox {
   Timer m_Timer;
   double m_State{0.f};
 
-  std::shared_ptr<Mesh> m_Mesh;
+  mesh_t m_Mesh;
 };
 
 }  // namespace core

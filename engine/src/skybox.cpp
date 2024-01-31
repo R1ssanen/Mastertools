@@ -14,8 +14,6 @@
 
 namespace core {
 
-Skybox::Skybox(const std::shared_ptr<Mesh>& t_Mesh) : m_Mesh{t_Mesh} {}
-
 std::vector<Tri> Skybox::Transform(const Camera& t_Camera,
                                    const Context& t_Context) {
   std::vector<Vertex> TransVertices{m_Mesh->GetVertices()};
@@ -106,22 +104,14 @@ void Skybox::RenderTri(Context& t_Context, const Tri& t_Tri) {
         Outside = false;
         bc0 *= full, bc1 *= full, bc2 *= full;
 
-        float W = 1.f / (a.m_Pos.w * bc0 + b.m_Pos.w * bc1 + c.m_Pos.w * bc2);
-        float u = std::fabs(bc0 * a.m_UV.x + bc1 * b.m_UV.x + bc2 * c.m_UV.x) *
-                  W,
-              v = std::fabs(bc0 * a.m_UV.y + bc1 * b.m_UV.y + bc2 * c.m_UV.y) *
-                  W;
+        float w = 1.f / (a.m_Pos.w * bc0 + b.m_Pos.w * bc1 + c.m_Pos.w * bc2);
+        float u =
+            std::fabs(bc0 * a.m_UV.x + bc1 * b.m_UV.x + bc2 * c.m_UV.x) * w;
+        float v =
+            std::fabs(bc0 * a.m_UV.y + bc1 * b.m_UV.y + bc2 * c.m_UV.y) * w;
 
-        unsigned int Loc{
-            static_cast<unsigned int>(m_Mesh->Texture->GetHeight() * v) *
-                m_Mesh->Texture->GetWidth() +
-            static_cast<unsigned int>(m_Mesh->Texture->GetWidth() * u)};
-
-        uint32_t Pixel{m_Mesh->Texture->Data[glm::clamp(
-            Loc, (unsigned int)0,
-            m_Mesh->Texture->GetWidth() * m_Mesh->Texture->GetHeight() - 1)]};
-
-        t_Context.ColorBuffer[row + x] = Pixel;
+        t_Context.ColorBuffer[row + x] =
+            m_Mesh->Texture->Sample(glm::vec2(u, v), 0.f);
       }
 
       else {

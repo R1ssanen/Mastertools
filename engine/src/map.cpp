@@ -17,7 +17,7 @@ glm::vec3 JsonArrayToVec3(const nlohmann::json& t_Array) {
 
 namespace core {
 
-void Application::LoadMap(const std::string& t_Path) {
+void App::LoadMap(const std::string& t_Path) {
   m_Objects.clear();
   m_PointLights.clear();
 
@@ -61,7 +61,7 @@ void Application::LoadMap(const std::string& t_Path) {
 
     else if (Key == "skybox") {
       m_Skybox = Skybox(LoadMeshOBJ(Element["directory"].get<std::string>(),
-                                    Element["file"].get<std::string>())[0]);
+                                    Element["file"].get<std::string>(), false)[0]);
     }
 
     else if (Key == "objects") {
@@ -72,9 +72,10 @@ void Application::LoadMap(const std::string& t_Path) {
           const mesh_vector_t LoadedMeshes{
               LoadMeshOBJ(Asset["directory"].get<std::string>(),
                           Asset["file"].get<std::string>(),
+                          Asset.contains("mipmapped") ? Asset["mipmapped"].get<bool>() : true,
                           Asset.contains("doublesided")
-                              ? !(Asset["doublesided"].get<bool>())
-                              : true)};
+                              ? Asset["doublesided"].get<bool>()
+                              : false)};
 
           MeshesOut.insert(MeshesOut.end(), LoadedMeshes.begin(),
                            LoadedMeshes.end());

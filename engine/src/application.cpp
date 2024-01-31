@@ -14,15 +14,7 @@
 
 namespace core {
 
-Application* Application::GetInstance() {
-  if (!m_Instance) {
-    m_Instance = new Application();
-  }
-
-  return m_Instance;
-}
-
-void Application::Init() {
+void App::Init() {
   InitDefaults();
   LoadMap();
 
@@ -30,12 +22,7 @@ void Application::Init() {
   SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
-void Application::LogPerformance() {
-  std::clog << "Avrg. Perf: " << m_Timer.Performance() << "ms/fr, "
-            << m_Timer.Elapsed() << "ms Elapsed\n";
-}
-
-void Application::Run() {
+void App::Run() {
   while (m_Running) {
     // m_PointLights[0].SetPos(m_Camera.GetPos());
 
@@ -87,7 +74,7 @@ void Application::Run() {
               Vertex.m_Pos.y *= Vertex.m_Pos.w;
             }
 
-            if (Mesh->Texture->CullBackfaces() && BackfaceCull(Tri)) {
+            if (Mesh->Texture->IsDoublesided() && BackfaceCull(Tri)) {
               continue;
             }
 

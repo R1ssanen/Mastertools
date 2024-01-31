@@ -12,6 +12,7 @@ namespace core {
 
 void InitDefaults();
 
-const core::mesh_t& GetDefaultLightOverlay();
+core::mesh_t GetDefaultLightOverlay();
+core::texture_t GetDefaultTexture();
 
 }  // namespace core
