@@ -11,7 +11,6 @@ add_executable(${PROJECT_NAME}
   src/object.cpp
   src/texture.cpp
   src/clipping.cpp
-  src/culling.cpp
   src/color.cpp
   src/skybox.cpp
   src/callbacks.cpp
@@ -34,12 +33,17 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/ deps/)
 find_library(SDL SDL2 NAMES SDL2 libSDL2)
 find_library(SDL_FONT SDL2_ttf NAMES SDL2_ttf libSDL2_ttf)
 
+find_package(OpenMP)
+IF(OpenMP_CXX_FOUND)
+    target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
+ENDIF()
+
 # find_library(OPENAL openal NAMES openal libopenal)
 # find_library(SNDFILE libsndfile NAMES sndfile libsndfile)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL})
 
 IF(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE EQUAL Debug)
-  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -g -flto=auto -pg -march=native)
+  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -pg -g -flto=auto -march=native)
 ELSE()
-  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -O3 -flto=auto -march=native -mavx2 -fomit-frame-pointer)
+  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -pg -O3 -flto=auto -march=native -mavx2) # -fomit-frame-pointer
 ENDIF()

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "srpch.hpp"
+#include "texture.hpp"
 
 #define AMBIENT_INTENSITY 0.05f
 
@@ -19,14 +20,14 @@ class Vertex {
  public:
   glm::vec4 m_Pos{0.f, 0.f, 0.f, 1.f}, m_Normal{0.f};
   glm::vec2 m_UV{0.f};
-  float m_Light{0.f};
+  float m_Light{AMBIENT_INTENSITY};
 };
 
 using Tri = std::array<Vertex, 3>;
 
 struct DrawTri {
   Tri m_Tri;
-  std::string m_TexName;
+  texture_t m_Texture;
 
   static bool FarToClose(const DrawTri& t_First, const DrawTri& t_Second) {
     return (t_First.m_Tri[0].m_Pos.z + t_First.m_Tri[1].m_Pos.z +

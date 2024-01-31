@@ -7,32 +7,27 @@
 #include "texture.hpp"
 #include "vertex.hpp"
 
-#include <ranges>
-
 namespace core {
 
 void DrawLine(Context& t_Context,
-              const glm::vec3& a,
-              const glm::vec3& b,
+              const glm::vec3& A,
+              const glm::vec3& B,
               uint32_t t_Col) {
-  glm::vec3 ab = b - a;
-  float step = glm::fastInverseSqrt(ab.x * ab.x + ab.y * ab.y + ab.z * ab.z);
+  const glm::vec3 AB = B - A;
+  const glm::vec2 MaxBoundary = glm::vec2(t_Context.GetWidth() - 1, t_Context.GetHeight() - 1);
 
-  for (float i = 0.f; i <= 1.f; i += step) {
-    int x = a.x + ab.x * i, y = a.y + ab.y * i;
+  float Step = 1.f / glm::fastLength(AB);
+  for (float T = 0.f; T <= 1.f; T += Step) {
+    glm::vec2 Point = A + AB * T;
 
-    if (x < 0 || y < 0 || x > t_Context.GetWidth() - 1 ||
-        y > t_Context.GetHeight() - 1) {
+    if (glm::clamp(Point, glm::vec2(0.f), MaxBoundary) != Point) {
       continue;
     }
 
-    /*float z = glm::clamp(a.z + ab.z * i, 0.f, 1.f);
-    if (t_Context.DepthBuffer[y * t_Context.GetWidth() + x] <= z) {
-      continue;
-    }*/
+    size_t Loc = static_cast<size_t>(Point.y) * t_Context.GetWidth() + static_cast<size_t>(Point.x);
 
-    t_Context.ColorBuffer[y * t_Context.GetWidth() + x] = t_Col;
-    t_Context.DepthBuffer[y * t_Context.GetWidth() + x] = 0;
+    t_Context.ColorBuffer[Loc] = t_Col;
+    t_Context.DepthBuffer[Loc] = 0.f;
   }
 }
 
@@ -131,70 +126,5 @@ void RenderTri(Context& t_Context,
     }
   }
 }
-
-/*void RenderTri(Context& t_Context,
-               const Tri& t_Tri,
-               const texture_t& t_Texture,
-               float t_InverseFar,
-               const shader_t& t_Shader) {
-  const auto [a, b, c] = t_Tri;
-
-  auto [min_x, max_x] = std::minmax({a.m_Pos.x, b.m_Pos.x, c.m_Pos.x});
-  auto [min_y, max_y] = std::minmax({a.m_Pos.y, b.m_Pos.y, c.m_Pos.y});
-
-  float full = 1.f / Edge(a.m_Pos.x, a.m_Pos.y, b.m_Pos.x, b.m_Pos.y, c.m_Pos.x,
-                          c.m_Pos.y);
-
-  min_x = glm::clamp<int>(min_x, 0, t_Context.GetWidth() - 1);
-  max_x = glm::clamp<int>(max_x, 0, t_Context.GetWidth() - 1);
-  min_y = glm::clamp<int>(min_y, 0, t_Context.GetHeight() - 1);
-  max_y = glm::clamp<int>(max_y, 0, t_Context.GetHeight() - 1);
-
-  if ((max_x - min_x) * (max_y - min_y) == 0) {
-    return;  // zero area triangle
-  }
-
-  for (int y = min_y; y <= max_y; y++) {
-    int Row = y * t_Context.GetWidth();
-    bool Outside{true};
-
-    for (int x = min_x; x <= max_x; x++) {
-      float bc0 = Edge(b.m_Pos.x, b.m_Pos.y, c.m_Pos.x, c.m_Pos.y, x, y),
-            bc1 = Edge(c.m_Pos.x, c.m_Pos.y, a.m_Pos.x, a.m_Pos.y, x, y),
-            bc2 = Edge(a.m_Pos.x, a.m_Pos.y, b.m_Pos.x, b.m_Pos.y, x, y);
-
-      if (bc0 <= 0.f && bc1 <= 0.f && bc2 <= 0.f) {
-        Outside = false;
-        bc0 *= full, bc1 *= full, bc2 *= full;
-
-        float w = 1.f / (a.m_Pos.w * bc0 + b.m_Pos.w * bc1 + c.m_Pos.w * bc2);
-        float z =
-            glm::clamp((a.m_Pos.z * bc0 + b.m_Pos.z * bc1 + c.m_Pos.z * bc2) * w
-* t_InverseFar, 0.f, 1.f);
-
-        if (t_Context.DepthBuffer[Row + x] <= z) {
-          continue;
-        }
-
-        float u = std::fabs(bc0 * a.m_UV.x + bc1 * b.m_UV.x + bc2 * c.m_UV.x) *
-w, v = std::fabs(bc0 * a.m_UV.y + bc1 * b.m_UV.y + bc2 * c.m_UV.y) * w;
-
-        float Light{
-            glm::clamp(bc0 * a.m_Light + bc1 * b.m_Light + bc2 * c.m_Light,
-                      AMBIENT_INTENSITY, 1.f)};
-
-        t_Shader(t_Context, t_Texture, glm::vec4(x, y, z, w), glm::vec2(u, v),
-                Light);
-      }
-
-      else {
-        if (!Outside) {
-          break;
-        }
-      }
-    }
-  }
-}
-*/
 
 }  // namespace core

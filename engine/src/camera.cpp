@@ -18,27 +18,21 @@ Camera::Camera(const glm::vec3& t_Pos,
       m_Far{t_Far} {}
 
 void Camera::HandleMovement() {
+  glm::vec3 Forward = GetForward(), Right = GetRight();
+
   if (GetKey(SDL_SCANCODE_W)) {
-    glm::vec3 Forward{glm::yawPitchRoll(m_Angle.x, m_Angle.y, m_Angle.z) *
-                      glm::vec4(0.f, 0.f, -1.f, 1.f)};
     m_Pos += Forward * CAMERA_SPEED;
   }
 
   if (GetKey(SDL_SCANCODE_S)) {
-    glm::vec3 Forward{glm::yawPitchRoll(m_Angle.x, m_Angle.y, m_Angle.z) *
-                      glm::vec4(0.f, 0.f, -1.f, 1.f)};
     m_Pos -= Forward * CAMERA_SPEED;
   }
 
   if (GetKey(SDL_SCANCODE_A)) {
-    glm::vec3 Right{glm::yawPitchRoll(m_Angle.x, m_Angle.y, m_Angle.z) *
-                    glm::vec4(1.f, 0.f, 0.f, 1.f)};
     m_Pos -= Right * CAMERA_SPEED;
   }
 
   if (GetKey(SDL_SCANCODE_D)) {
-    glm::vec3 Right{glm::yawPitchRoll(m_Angle.x, m_Angle.y, m_Angle.z) *
-                    glm::vec4(1.f, 0.f, 0.f, 1.f)};
     m_Pos += Right * CAMERA_SPEED;
   }
 
@@ -79,5 +73,14 @@ glm::mat4 Camera::GetMatProjection(float width, float height) const {
 glm::mat4 Camera::GetMatLookAt(const glm::vec3& t_OriginalPos) const {
   return glm::eulerAngleYX(m_Angle.x, m_Angle.y);
 }
+
+glm::vec3 Camera::GetForward() const {return glm::yawPitchRoll(m_Angle.x, m_Angle.y, m_Angle.z) *
+                      glm::vec4(0.f, 0.f, -1.f, 1.f);}
+
+glm::vec3 Camera::GetRight() const {return glm::yawPitchRoll(m_Angle.x, m_Angle.y, m_Angle.z) *
+                      glm::vec4(1.f, 0.f, 0.f, 1.f);}
+
+glm::vec3 Camera::GetUp() const {return glm::yawPitchRoll(m_Angle.x, m_Angle.y, m_Angle.z) *
+                      glm::vec4(0.f, 1.f, 0.f, 1.f);}
 
 }  // namespace core

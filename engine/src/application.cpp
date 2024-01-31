@@ -23,7 +23,7 @@ void App::Init() {
 }
 
 void App::Run() {
-  while (m_Running) {
+  while (m_Timer.Frames() < 3000 && m_Running) {
     // m_PointLights[0].SetPos(m_Camera.GetPos());
 
     SDL_PumpEvents();
@@ -62,42 +62,36 @@ void App::Run() {
         }
 
         for (size_t ID = 0; ID < Mesh->GetIndices().size(); ID += 3) {
-          std::vector<Tri> ClipTris{
-              FrustumClipTriangle(Tri{TransVertices[ID], TransVertices[ID + 1],
-                                      TransVertices[ID + 2]},
-                                  m_Camera.GetFrustum())};
+          Tri UnclippedTri{TransVertices[ID], TransVertices[ID + 1], TransVertices[ID + 2]};
 
-          for (Tri& Tri : ClipTris) {
+          for (Tri& Tri : FrustumClipTriangle(UnclippedTri, m_Camera.GetFrustum())) {
             for (Vertex& Vertex : Tri) {
               Vertex.m_Pos.w = 1.f / Vertex.m_Pos.w;
               Vertex.m_Pos.x *= Vertex.m_Pos.w;
               Vertex.m_Pos.y *= Vertex.m_Pos.w;
             }
 
-            if (Mesh->Texture->IsDoublesided() && BackfaceCull(Tri)) {
+            if (!Mesh->Texture->IsDoublesided() && ClipspaceBackfaceCull(Tri)) {
               continue;
             }
 
             for (Vertex& Vertex : Tri) {
+              Vertex.m_Pos.z *= Vertex.m_Pos.w;
+              Vertex.m_UV *= Vertex.m_Pos.w;
+
               Vertex.m_Pos.x =
                   (Vertex.m_Pos.x + 1.f) * 0.5f * m_Context.GetWidth();
               Vertex.m_Pos.y =
                   (Vertex.m_Pos.y + 1.f) * 0.5f * m_Context.GetHeight();
-
-              Vertex.m_Pos.z *= Vertex.m_Pos.w;
-              Vertex.m_UV *= Vertex.m_Pos.w;
             }
 
             if (m_Wireframe) {
-              uint32_t Color{Mesh->Texture->IsTransparent() ? 0xFF0000FF
-                                                            : 0x00FF00FF};
               DrawWireframe(m_Context,
-                            {Tri[0].m_Pos, Tri[1].m_Pos, Tri[2].m_Pos}, true,
-                            Color);
+                            {Tri[0].m_Pos, Tri[1].m_Pos, Tri[2].m_Pos});
             }
 
             else if (Mesh->Texture->IsTransparent()) {
-              TransparentTris.push_back(DrawTri{Tri, Mesh->Texture->GetName()});
+              TransparentTris.push_back(DrawTri{Tri, Mesh->Texture});
             }
 
             else {
@@ -163,7 +157,7 @@ void App::Run() {
               DrawTri::FarToClose);
 
     for (const DrawTri& Tri : TransparentTris) {
-      RenderTri(m_Context, Tri.m_Tri, GetTexture(Tri.m_TexName),
+      RenderTri(m_Context, Tri.m_Tri, Tri.m_Texture,
                 m_Camera.GetInverseFar(), TransparentSTD);
     }
 

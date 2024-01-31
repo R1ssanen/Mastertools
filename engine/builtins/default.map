@@ -1,7 +1,7 @@
 {
   "map": "default.map",
   "camera": {
-    "far": 15
+    "far": 100
   },
   "skybox": {
     "directory": "../../engine/builtins/",
@@ -10,10 +10,7 @@
   "objects": [
     {
       "assets": [
-        {
-          "directory": "../../resources/assets/home/",
-          "file": "home.obj"
-        }
+
       ]
     }
   ],

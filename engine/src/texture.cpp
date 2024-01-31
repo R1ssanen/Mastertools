@@ -130,6 +130,7 @@ texture_t MipmapTexture::New(const std::string& t_Path,
 
   s_LoadedTextures[t_Path] = std::make_shared<MipmapTexture>(
       Mipmap, t_Miplevels, t_Path, t_IsTransparent, t_IsDoublesided);
+  
   //s_LoadedTextures[t_Path]->Save("mipmap");
   return s_LoadedTextures[t_Path];
 }

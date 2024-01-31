@@ -22,6 +22,7 @@ inline void OpaqueSTD(Context& t_Context,
 
   unsigned Loc{static_cast<unsigned>(t_Pos.y * t_Context.GetWidth() + t_Pos.x)};
   t_Context.ColorBuffer[Loc] = ModUint32(Pixel, t_Light);
+  //t_Context.ColorBuffer[Loc] = BlendUint32(t_Context.ColorBuffer[Loc], 0x263659FF, 1.f - t_Pos.z);
   t_Context.DepthBuffer[Loc] = t_Pos.z;
 }
 

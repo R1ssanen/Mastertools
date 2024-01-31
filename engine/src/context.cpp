@@ -41,7 +41,7 @@ Context CreateContext() {
   SDL_SetWindowDisplayMode(Context.Window, &Spec);
 
   Context.Renderer = SDL_CreateRenderer(
-      Context.Window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
+      Context.Window, -1, SDL_RENDERER_ACCELERATED);
   Context.RenderTexture =
       SDL_CreateTexture(Context.Renderer, SDL_PIXELFORMAT_RGBA8888,
                         SDL_TEXTUREACCESS_STREAMING, TargetWidth, TargetHeight);
