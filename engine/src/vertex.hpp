@@ -1,46 +1,42 @@
 #pragma once
 
+#include "settings.hpp"
 #include "srpch.hpp"
 #include "texture.hpp"
 
-#define AMBIENT_INTENSITY 0.05f
+namespace core
+{
 
-namespace core {
+class Vertex
+{
+  public:
+    Vertex(const glm::vec4& t_Pos, const glm::vec4& t_Normal, const glm::vec2& t_UV,
+           float t_Light = GetSettingAmbientIntensity())
+        : m_Pos{t_Pos}, m_Normal{t_Normal}, m_UV{t_UV}, m_Light{t_Light}
+    {
+    }
 
-class Vertex {
- public:
-  ~Vertex() = default;
-
-  Vertex(const glm::vec4& t_Pos = glm::vec4(0.f, 0.f, 0.f, 1.f),
-         const glm::vec4& t_Normal = glm::vec4(0.f, 0.f, 0.f, 1.f),
-         const glm::vec2& t_UV = glm::vec2(0.f, 0.f),
-         float t_Light = AMBIENT_INTENSITY)
-      : m_Pos{t_Pos}, m_Normal{t_Normal}, m_UV{t_UV}, m_Light{t_Light} {}
-
- public:
-  glm::vec4 m_Pos{0.f, 0.f, 0.f, 1.f}, m_Normal{0.f};
-  glm::vec2 m_UV{0.f};
-  float m_Light{AMBIENT_INTENSITY};
+    glm::vec4 m_Pos{0.f, 0.f, 0.f, 1.f}, m_Normal{0.f};
+    glm::vec2 m_UV{0.f};
+    float m_Light;
 };
 
-using Tri = std::array<Vertex, 3>;
+using triangle_t = std::array<Vertex, 3>;
+using triangle_vector_t = std::vector<triangle_t>;
 
-struct DrawTri {
-  Tri m_Tri;
-  texture_t m_Texture;
+struct DrawTri
+{
+    triangle_t m_Tri;
+    texture_t m_Texture;
 
-  static bool FarToClose(const DrawTri& t_First, const DrawTri& t_Second) {
-    return (t_First.m_Tri[0].m_Pos.z + t_First.m_Tri[1].m_Pos.z +
-            t_First.m_Tri[2].m_Pos.z) *
-               glm::third<float>() >
-           (t_Second.m_Tri[0].m_Pos.z + t_Second.m_Tri[1].m_Pos.z +
-            t_Second.m_Tri[2].m_Pos.z) *
-               glm::third<float>();
-  }
+    static bool FarToClose(const DrawTri& t_First, const DrawTri& t_Second)
+    {
+        return (t_First.m_Tri[0].m_Pos.z + t_First.m_Tri[1].m_Pos.z + t_First.m_Tri[2].m_Pos.z) * glm::third<float>() >
+               (t_Second.m_Tri[0].m_Pos.z + t_Second.m_Tri[1].m_Pos.z + t_Second.m_Tri[2].m_Pos.z) *
+                   glm::third<float>();
+    }
 
-  static bool CloseToFar(const DrawTri& t_First, const DrawTri& t_Second) {
-    return !FarToClose(t_First, t_Second);
-  }
+    static bool CloseToFar(const DrawTri& t_First, const DrawTri& t_Second) { return !FarToClose(t_First, t_Second); }
 };
 
-}  // namespace core
+} // namespace core

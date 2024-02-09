@@ -2,49 +2,41 @@
 
 #include "srpch.hpp"
 
-namespace core {
+namespace core
+{
 
-class Context {
- public:
-  Context() = default;
-  ~Context() {
-    delete[] ColorBuffer;
-    delete[] DepthBuffer;
+class Context
+{
+  public:
+    Context() = default;
+    ~Context() { Delete(); }
 
-    SDL_DestroyWindow(Window);
-    SDL_DestroyRenderer(Renderer);
-    SDL_DestroyTexture(RenderTexture);
-  }
+    Context(const SDL_DisplayMode& t_Spec, const SDL_Rect& t_Viewport) : m_Spec{t_Spec}, m_Viewport{t_Viewport} {}
 
-  Context(const SDL_DisplayMode& t_Spec, const SDL_Rect& t_Viewport)
-      : m_Spec{t_Spec}, m_Viewport{t_Viewport} {}
+    SDL_Window* Window;
+    SDL_Renderer* Renderer;
+    SDL_Texture* RenderTexture;
 
-  SDL_Window* Window{nullptr};
-  SDL_Renderer* Renderer{nullptr};
-  SDL_Texture* RenderTexture{nullptr};
+    uint32_t* ColorBuffer;
+    float* DepthBuffer;
 
-  uint32_t* ColorBuffer{nullptr};
-  float* DepthBuffer{nullptr};
+    const int& GetWidth() const { return m_Spec.w; }
+    const int& GetHeight() const { return m_Spec.h; }
 
-  const int& GetWidth() const { return m_Spec.w; }
-  const int& GetHeight() const { return m_Spec.h; }
+    const SDL_DisplayMode& GetSpec() const { return m_Spec; }
+    void SetSpec(const SDL_DisplayMode& t_Value) { m_Spec = t_Value; }
+    const SDL_Rect& GetViewport() const { return m_Viewport; }
+    void SetViewport(int x, int y, int t_Width, int t_Height) { m_Viewport = SDL_Rect{x, y, t_Width, t_Height}; }
 
-  const SDL_DisplayMode& GetSpec() const { return m_Spec; }
-  void SetSpec(const SDL_DisplayMode& t_Value) { m_Spec = t_Value; }
+    void Update();
+    void Clear();
+    void Delete();
 
-  const SDL_Rect& GetViewport() const { return m_Viewport; }
-  void SetViewport(int x, int y, int t_Width, int t_Height) {
-    m_Viewport = SDL_Rect{x, y, t_Width, t_Height};
-  }
-
-  void Update();
-  void Clear();
-
- private:
-  SDL_DisplayMode m_Spec;
-  SDL_Rect m_Viewport;
+  private:
+    SDL_DisplayMode m_Spec;
+    SDL_Rect m_Viewport;
 };
 
 Context CreateContext();
 
-}  // namespace core
+} // namespace core

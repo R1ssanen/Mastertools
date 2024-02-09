@@ -16,7 +16,7 @@ add_executable(${PROJECT_NAME}
   src/callbacks.cpp
   src/light.cpp
   src/map.cpp
-  src/defaults.cpp
+  src/settings.cpp
 )
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC "deps/srpch.hpp")
@@ -34,8 +34,9 @@ find_library(SDL SDL2 NAMES SDL2 libSDL2)
 find_library(SDL_FONT SDL2_ttf NAMES SDL2_ttf libSDL2_ttf)
 
 find_package(OpenMP)
+
 IF(OpenMP_CXX_FOUND)
-    target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
+  target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
 ENDIF()
 
 # find_library(OPENAL openal NAMES openal libopenal)

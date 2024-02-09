@@ -8,24 +8,26 @@
 #include "timer.hpp"
 #include "vertex.hpp"
 
-namespace core {
+namespace core
+{
 
-class Skybox {
- public:
-  ~Skybox() = default;
+class Skybox
+{
+  public:
+    void Render(const Camera& t_Camera, Context& t_Context);
 
-  Skybox(const mesh_t& t_Mesh) : m_Mesh{t_Mesh} {}
+    Skybox() = default;
+    Skybox(const mesh_t& t_Mesh) : m_Mesh{t_Mesh} {}
 
-  void Render(const Camera& t_Camera, Context& t_Context);
+  private:
+    triangle_vector_t Transform(const Camera& t_Camera, const Context& t_Context);
+    void RenderTri(core::Context& t_Context, const triangle_t& t_Tri);
 
- private:
-  std::vector<Tri> Transform(const Camera& t_Camera, const Context& t_Context);
-  void RenderTri(core::Context& t_Context, const Tri& t_Tri);
-
-  Timer m_Timer;
-  double m_State{0.f};
-
-  mesh_t m_Mesh;
+    mesh_t m_Mesh;
+    Timer m_Timer;
+    double m_State{0.f};
 };
 
-}  // namespace core
+Skybox GetDefaultSkybox();
+
+} // namespace core

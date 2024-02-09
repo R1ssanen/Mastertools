@@ -1,7 +1,7 @@
 {
   "map": "default.map",
   "camera": {
-    "far": 100
+    "far": 150
   },
   "skybox": {
     "directory": "../../engine/builtins/",
@@ -10,7 +10,10 @@
   "objects": [
     {
       "assets": [
-
+        {
+          "directory": "../../resources/assets/sponza/",
+          "file": "sponza.obj"
+        }
       ]
     }
   ],

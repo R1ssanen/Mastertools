@@ -9,57 +9,53 @@
 #include "srpch.hpp"
 #include "timer.hpp"
 
-namespace core {
+namespace core
+{
 
-class App {
- public:
-  void Run();
-  void Init();
-  void Delete() {
-    delete this;
-  }
-  void LogPerformance() {
-    std::clog << "Avrg. Perf: " << m_Timer.Performance() << "ms/fr, "
-              << m_Timer.Elapsed() << "ms Elapsed\n";
-  }
-
-  static App* GetInstance() {
-    if (m_Instance == nullptr) {
-      m_Instance = new App();
+class App
+{
+  public:
+    void Run();
+    void Init();
+    void Delete() { delete this; }
+    void LogPerformance()
+    {
+        std::clog << "Avrg. Perf: " << m_Timer.Performance() << "ms/fr, " << m_Timer.Elapsed() << "ms Elapsed\n";
     }
 
-    return m_Instance;
-  }
+    static App* GetInstance()
+    {
+        if (m_Instance == nullptr)
+        {
+            m_Instance = new App();
+        }
 
-  void SetRunning(const bool& t_Value) { m_Running = t_Value; }
-  const bool& GetWireframe() const { return m_Wireframe; }
-  void SetWireframe(const bool& t_Value) { m_Wireframe = t_Value; }
-  const bool& GetShowMipmaps() const {return m_ShowMipmaps;}
-  void SetShowMipmaps(const bool& t_Value) { m_ShowMipmaps = t_Value; }
-  
-  const Context& GetContext() const { return m_Context; }
+        return m_Instance;
+    }
 
-  App(App& other) = delete;
-  void operator=(const App&) = delete;
+    void SetRunning(const bool& t_Value) { m_Running = t_Value; }
+    const Context& GetContext() const { return m_Context; }
 
-  void LoadMap(const std::string& t_Path = "../../engine/builtins/default.map");
+    App(App& other) = delete;
+    void operator=(const App&) = delete;
 
- private:
-  App() = default;
-  ~App() = default;
-  inline static App* m_Instance{nullptr};
+    void LoadMap(const std::string& t_Path = BUILTINS_DIR + "default.map");
 
-  Skybox m_Skybox = Skybox(LoadMeshOBJ("../../engine/builtins/", "skybox.obj", false)[0]);
-  Context m_Context = CreateContext();
-  Timer m_Timer;
+  private:
+    App() = default;
+    ~App() = default;
 
-  std::string m_MapName;
-  bool m_Running{true}, m_Wireframe{false}, m_ShowMipmaps{false};
+    inline static App* m_Instance{nullptr};
+    bool m_Running{true};
+    Timer m_Timer;
 
-  Camera m_Camera;
+    Skybox m_Skybox = GetDefaultSkybox();
+    Camera m_Camera = GetDefaultCamera();
+    Context m_Context = CreateContext();
 
-  std::vector<Object> m_Objects;
-  std::vector<PointLight> m_PointLights;
+    std::string m_MapName;
+    std::vector<Object> m_Objects;
+    std::vector<PointLight> m_PointLights;
 };
 
-}  // namespace core
+} // namespace core

@@ -3,51 +3,45 @@
 #include "clipping.hpp"
 #include "srpch.hpp"
 
-#define SENSITIVITY_YAW 1000.f
-#define SENSITIVITY_PITCH 1000.f
-#define CAM_MAX_VERTICAL_ANGLE 85.f
 #define CAMERA_SPEED 0.1f
 
-namespace core {
+namespace core
+{
 
-class Camera {
- public:
-  ~Camera() = default;
-  Camera() = default;
+class Camera
+{
+  public:
+    glm::mat4 GetMatView() const;
+    glm::mat4 GetMatProjection(float t_Width, float t_Height) const;
 
-  glm::mat4 GetMatView() const;
-  glm::mat4 GetMatProjection(float width, float height) const;
-  glm::mat4 GetMatLookAt(const glm::vec3& t_OriginalPos) const;
+    glm::vec3 GetForward() const;
+    glm::vec3 GetRight() const;
+    glm::vec3 GetUp() const;
 
-  glm::vec3 GetForward() const;
-  glm::vec3 GetRight() const;
-  glm::vec3 GetUp() const;
+    const glm::vec3& GetPos() const { return m_Pos; }
+    const glm::vec3& GetAngle() const { return m_Angle; }
+    const Frustum& GetFrustum() const { return m_Frustum; }
+    float GetInverseFar() const { return 1.f / m_Far; }
 
-  const glm::vec3& GetPos() const { return m_Pos; }
-  void SetPos(const glm::vec3& t_Val) { m_Pos = t_Val; }
-  const glm::vec3& GetAngle() const { return m_Angle; }
-  void SetAngle(const glm::vec3& t_Val) { m_Angle = t_Val; }
+    void HandleMovement();
+    void HandleRotation();
 
-  const Frustum& GetFrustum() const { return m_Frustum; }
-  float GetInverseFar() const { return 1.f / m_Far; }
+    Camera() = default;
+    Camera(const glm::vec3& t_Pos, const glm::vec3& t_Angle, float t_FOV, float t_Near, float t_Far)
+        : m_Pos{t_Pos}, m_Angle{t_Angle}, m_Fov{t_FOV}, m_Near{t_Near}, m_Far{t_Far}
+    {
+    }
 
-  void HandleMovement();
-  void HandleRotation();
+  private:
+    glm::vec3 m_Pos, m_Angle;
+    float m_Fov, m_Near, m_Far;
 
-  Camera(const glm::vec3& t_Pos,
-         const glm::vec3& t_Angle,
-         float t_FOV,
-         float t_Near,
-         float t_Far);
-
- private:
-  glm::vec3 m_Pos{0.f}, m_Angle{0.f};
-  float m_FOV{90.f}, m_Near{0.05f}, m_Far{100.f};
-
-  Frustum m_Frustum{
-      Plane(glm::vec3(0.f, 0.f, m_Near), glm::vec3(0.f, 0.f, 1.f)),  // near
-      Plane(glm::vec3(0.f, 0.f, m_Far), glm::vec3(0.f, 0.f, -1.f))   // far
-  };
+    Frustum m_Frustum{
+        Plane(glm::vec3(0.f, 0.f, m_Near), glm::vec3(0.f, 0.f, 1.f)), // near
+        Plane(glm::vec3(0.f, 0.f, m_Far), glm::vec3(0.f, 0.f, -1.f))  // far
+    };
 };
 
-}  // namespace core
+Camera GetDefaultCamera();
+
+} // namespace core
