@@ -10,20 +10,25 @@ namespace core
 class Mesh
 {
   public:
-    ~Mesh() = default;
-    Mesh(const std::vector<Vertex>& t_Vertices, const std::vector<unsigned>& t_Indices, const texture_t& t_Texture);
+    const vertex_vector_t& GetVertices() const { return m.Vertices; }
+    const index_vector_t& GetIndices() const { return m.Indices; }
+    const glm::vec3& GetMassCenter() const { return m.MassCenter; }
+    const float& GetBoundingRadius() const { return m.BoundingRadius; }
+    const uint32_t& GetTextureID() const { return m.TextureID; }
 
-    const std::vector<Vertex>& GetVertices() const;
-    const std::vector<unsigned>& GetIndices() const;
-
-    texture_t Texture;
+    static Mesh New(const vertex_vector_t& t_Vertices, const index_vector_t& t_Indices, uint32_t t_TextureID);
 
   private:
-    std::vector<Vertex> m_Vertices;
-    std::vector<unsigned> m_Indices;
+    struct _M
+    {
+        vertex_vector_t Vertices;
+        index_vector_t Indices;
+        glm::vec3 MassCenter;
+        float BoundingRadius;
+        uint32_t TextureID;
+    } m;
 
-    glm::vec3 m_MassCenter{0.f};
-    float m_BoundingRadius{0.f};
+    Mesh(_M&& t_Data) : m{std::move(t_Data)} {}
 };
 
 using mesh_t = std::shared_ptr<Mesh>;

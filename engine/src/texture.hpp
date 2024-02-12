@@ -35,12 +35,13 @@ class Texture
 {
   public:
     ~Texture() = default;
-    Texture(const std::string& t_Name, bool t_IsTransparent, bool t_IsDoublesided)
-        : m_Name{t_Name}, m_IsTransparent{t_IsTransparent}, m_IsDoublesided{t_IsDoublesided}
+    Texture(const std::string& t_Name, uint32_t& t_ID, bool t_IsTransparent, bool t_IsDoublesided)
+        : m_Name{t_Name}, m_ID{t_ID}, m_IsTransparent{t_IsTransparent}, m_IsDoublesided{t_IsDoublesided}
     {
     }
 
     const std::string& GetName() const { return m_Name; }
+    const uint32_t& GetID() const { return m_ID; }
     const bool& IsTransparent() const { return m_IsTransparent; }
     const bool& IsDoublesided() const { return m_IsDoublesided; }
 
@@ -49,6 +50,7 @@ class Texture
 
   private:
     std::string m_Name;
+    uint32_t m_ID;
     bool m_IsTransparent = false, m_IsDoublesided = false;
 };
 
@@ -59,8 +61,8 @@ class ImageTexture : public Texture
   public:
     ~ImageTexture() = default;
 
-    ImageTexture(image_t t_Image, const std::string& t_Name, bool t_IsTransparent, bool t_IsDoublesided)
-        : Texture(t_Name, t_IsTransparent, t_IsDoublesided), m_Image{t_Image}
+    ImageTexture(image_t t_Image, const std::string& t_Name, uint32_t t_ID, bool t_IsTransparent, bool t_IsDoublesided)
+        : Texture(t_Name, t_ID, t_IsTransparent, t_IsDoublesided), m_Image{t_Image}
     {
     }
 
@@ -78,9 +80,9 @@ class MipmapTexture : public Texture
   public:
     ~MipmapTexture() = default;
 
-    MipmapTexture(const std::vector<image_t>& t_Mipmap, uint8_t t_Miplevels, const std::string& t_Name,
+    MipmapTexture(const std::vector<image_t>& t_Mipmap, uint8_t t_Miplevels, const std::string& t_Name, uint32_t t_ID, 
                   bool t_IsTransparent, bool t_IsDoublesided)
-        : Texture(t_Name, t_IsTransparent, t_IsDoublesided), m_Mipmap{t_Mipmap}, m_Miplevels{t_Miplevels}
+        : Texture(t_Name, t_ID, t_IsTransparent, t_IsDoublesided), m_Mipmap{t_Mipmap}, m_Miplevels{t_Miplevels}
     {
     }
 
@@ -100,8 +102,8 @@ class ColorTexture : public Texture
   public:
     ~ColorTexture() = default;
 
-    ColorTexture(const uint32_t& t_Color, const std::string& t_Name, bool t_IsTransparent, bool t_IsDoublesided)
-        : Texture(t_Name, t_IsTransparent, t_IsDoublesided), m_Color{t_Color}
+    ColorTexture(const uint32_t& t_Color, const std::string& t_Name, uint32_t t_ID, bool t_IsTransparent, bool t_IsDoublesided)
+        : Texture(t_Name, t_ID, t_IsTransparent, t_IsDoublesided), m_Color{t_Color}
     {
     }
 
@@ -116,6 +118,7 @@ class ColorTexture : public Texture
 };
 
 texture_t GetTexture(const std::string& t_Name);
+texture_t GetTexture(uint32_t t_ID);
 
 texture_t GetDefaultTexture();
 

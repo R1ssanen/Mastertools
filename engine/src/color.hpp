@@ -33,4 +33,7 @@ uint32_t BlendUint32(uint32_t A, uint32_t B, float t_Scalar);
 uint32_t AverageUint32(uint32_t A, uint32_t B);
 uint32_t ModUint32(uint32_t t_Color, float t_Scalar);
 
+float Luminosity(const glm::vec3& t_Color);
+uint32_t GetRandomColor();
+
 } // namespace core

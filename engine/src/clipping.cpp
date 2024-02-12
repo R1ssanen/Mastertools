@@ -5,14 +5,25 @@
 namespace core
 {
 
+float Plane::SignedDistance(const glm::vec3& t_Point) const { return glm::dot(m.Normal, t_Point - m.Point); }
+
+Plane Plane::New(const glm::vec3& t_Normal, const glm::vec3& t_Point) {
+    return Plane(
+        _M{
+            .Point = t_Point,
+            .Normal = t_Normal
+        }
+    );
+}
+
 Vertex IntersectLine(const Plane& t_Plane, const Vertex& A, const Vertex& B)
 {
     const float T = glm::clamp(glm::dot(t_Plane.GetPoint() - glm::vec3(A.m_Pos), t_Plane.GetNormal()) /
                                    glm::dot(glm::vec3(B.m_Pos - A.m_Pos), t_Plane.GetNormal()),
                                0.f, 1.f);
 
-    glm::vec4 Pos = A.m_Pos + (B.m_Pos - A.m_Pos) * T,
-              Normal = glm::normalize(A.m_Normal + (B.m_Normal - A.m_Normal) * T);
+    glm::vec4 Pos = A.m_Pos + (B.m_Pos - A.m_Pos) * T;
+    glm::vec4 Normal = glm::normalize(A.m_Normal + (B.m_Normal - A.m_Normal) * T);
     glm::vec2 UV = A.m_UV + (B.m_UV - A.m_UV) * T;
     float Light = std::min(A.m_Light + (B.m_Light - A.m_Light) * T, 1.f);
 

@@ -3,31 +3,36 @@
 #include "mesh.hpp"
 #include "srpch.hpp"
 
-namespace core {
+namespace core
+{
 
-class Object {
- public:
-  Object() = default;
-  ~Object() = default;
+class Object
+{
+  public:
+    glm::mat4 GetMatScale() const;
+    glm::mat4 GetMatRotation(float t_DeltaTime = 0.f) const;
+    glm::mat4 GetMatTranslation() const;
 
-  Object(const mesh_vector_t& t_Meshes,
-         const glm::vec3& t_Pos = glm::vec3(0.f),
-         const glm::vec3& t_Angle = glm::vec3(0.f),
-         const glm::vec3& t_Scale = glm::vec3(1.f));
+    const mesh_vector_t& GetMeshes() const { return m.Meshes; }
+    const glm::vec3& GetPos() const { return m.Pos; }
+    const glm::vec3& GetAngle() const { return m.Angle; }
+    const glm::vec3& GetScale() const { return m.Scale; }
 
-  const glm::vec3& GetAngle() const { return m_Angle; }
-  void SetAngle(const glm::vec3& t_Angle) { m_Angle = t_Angle; }
-  const glm::vec3& GetPos() const { return m_Pos; }
+    static Object New(const mesh_vector_t& t_Meshes, const glm::vec3& t_Pos, const glm::vec3& t_Angle,
+                      const glm::vec3& t_Scale);
 
-  glm::mat4 GetScale() const;
-  glm::mat4 GetRotation(float t_DeltaTime = 0.f) const;
-  glm::mat4 GetTranslation() const;
+  private:
+    struct _M
+    {
+        mesh_vector_t Meshes;
+        glm::vec3 Pos;
+        glm::vec3 Angle;
+        glm::vec3 Scale;
+    } m;
 
-  const mesh_vector_t& GetMeshes() const;
-
- private:
-  mesh_vector_t m_Meshes;
-  glm::vec3 m_Pos{0.f}, m_Angle{0.f}, m_Scale{1.f};
+    Object(_M&& t_Data) : m{std::move(t_Data)} {}
 };
 
-}  // namespace core
+using object_vector_t = std::vector<Object>;
+
+} // namespace core

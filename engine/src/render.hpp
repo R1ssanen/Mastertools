@@ -30,8 +30,8 @@ inline glm::vec3 CalculateMatrixRow(const glm::vec3& A, const glm::vec3& B)
     return glm::vec3(A.x * B.y - B.x * A.y, A.y - B.y, B.x - A.x);
 }
 
-void RenderTriBary(Context& t_Context, const triangle_t& t_Tri, texture_t t_Texture, float t_InverseFar,
-                   const shader_t& t_Shader);
+void RenderTriBary(Context& t_Context, const triangle_t& t_Tri, uint32_t t_TextureID, float t_InverseFar,
+                   const shader_t& t_Shader, const glm::vec2& t_BoundsMin, const glm::vec2& t_BoundsMax);
 
 void RenderTriScan(Context& t_Context, triangle_t& t_Tri, texture_t t_Texture, float t_InverseFar,
                    const shader_t& t_Shader);

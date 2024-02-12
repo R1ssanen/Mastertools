@@ -14,7 +14,11 @@
 namespace
 {
 std::unordered_map<std::string, core::image_t> s_LoadedImages;
-std::unordered_map<std::string, core::texture_t> s_LoadedTextures;
+
+uint32_t s_CurrentMaxID = 0;
+std::unordered_map<std::string, uint32_t> s_TexturePathToID;
+std::unordered_map<uint32_t, core::texture_t> s_TextureIDToTexture;
+
 std::unordered_map<size_t, uint32_t> s_MiplevelDebugColors{{0, 0x0bff00FF}, {1, 0x23e600FF}, {2, 0x45c200FF},
                                                            {3, 0x73c400FF}, {4, 0xc8d600FF}, {5, 0xe25e00FF}};
 } // namespace
@@ -75,14 +79,17 @@ void ImageData::SaveImage(const std::string& t_Filename) const
 
 texture_t ImageTexture::New(const std::string& t_Path, bool t_IsTransparent, bool t_IsDoublesided)
 {
-    if (s_LoadedTextures.count(t_Path))
+    if (s_TexturePathToID.count(t_Path))
     {
-        return s_LoadedTextures[t_Path];
+        return s_TextureIDToTexture[s_TexturePathToID[t_Path]];
     }
 
-    s_LoadedTextures[t_Path] =
-        std::make_shared<ImageTexture>(LoadImage(t_Path), t_Path, t_IsTransparent, t_IsDoublesided);
-    return s_LoadedTextures[t_Path];
+    texture_t Texture = std::make_shared<ImageTexture>(LoadImage(t_Path), t_Path, s_CurrentMaxID, t_IsTransparent, t_IsDoublesided);
+    s_TextureIDToTexture[s_CurrentMaxID] = Texture;
+    s_TexturePathToID[t_Path] = s_CurrentMaxID;
+
+    s_CurrentMaxID++;
+    return Texture;
 }
 
 uint32_t ImageTexture::Sample(const glm::vec2& t_UV, float t_Depth) const
@@ -97,9 +104,9 @@ void ImageTexture::Save(const std::string& t_Filename) const { m_Image->SaveImag
 
 texture_t MipmapTexture::New(const std::string& t_Path, uint8_t t_Miplevels, bool t_IsTransparent, bool t_IsDoublesided)
 {
-    if (s_LoadedTextures.count(t_Path))
+    if (s_TexturePathToID.count(t_Path))
     {
-        return s_LoadedTextures[t_Path];
+        return s_TextureIDToTexture[s_TexturePathToID[t_Path]];
     }
 
     image_t Level0 = LoadImage(t_Path);
@@ -133,11 +140,12 @@ texture_t MipmapTexture::New(const std::string& t_Path, uint8_t t_Miplevels, boo
         Mipmap.push_back(std::make_shared<ImageData>(static_cast<uint32_t*>(SublevelSurf->pixels), Width, Height));
     }
 
-    s_LoadedTextures[t_Path] =
-        std::make_shared<MipmapTexture>(Mipmap, t_Miplevels, t_Path, t_IsTransparent, t_IsDoublesided);
+    texture_t Texture = std::make_shared<MipmapTexture>(Mipmap, t_Miplevels, t_Path, s_CurrentMaxID, t_IsTransparent, t_IsDoublesided);
+    s_TextureIDToTexture[s_CurrentMaxID] = Texture;
+    s_TexturePathToID[t_Path] = s_CurrentMaxID;
 
-    // s_LoadedTextures[t_Path]->Save("mipmap");
-    return s_LoadedTextures[t_Path];
+    s_CurrentMaxID++;
+    return Texture;
 }
 
 uint32_t MipmapTexture::Sample(const glm::vec2& t_UV, float t_Depth) const
@@ -168,20 +176,25 @@ void MipmapTexture::Save(const std::string& t_Filename) const
 texture_t ColorTexture::New(const std::string& t_Name, const uint32_t& t_Color, bool t_IsTransparent,
                             bool t_IsDoublesided)
 {
-    if (s_LoadedTextures.count(t_Name))
+    if (s_TexturePathToID.count(t_Name))
     {
-        return s_LoadedTextures[t_Name];
+        return s_TextureIDToTexture[s_TexturePathToID[t_Name]];
     }
 
-    s_LoadedTextures[t_Name] = std::make_shared<ColorTexture>(t_Color, t_Name, t_IsTransparent, t_IsDoublesided);
-    return s_LoadedTextures[t_Name];
+    texture_t Texture = std::make_shared<ColorTexture>(t_Color, t_Name, s_CurrentMaxID, t_IsTransparent, t_IsDoublesided);
+    s_TextureIDToTexture[s_CurrentMaxID] = Texture;
+    s_TexturePathToID[t_Name] = s_CurrentMaxID;
+
+    s_CurrentMaxID++;
+    return Texture;
 }
 
 uint32_t ColorTexture::Sample(const glm::vec2& t_UV, float t_Depth) const { return m_Color; }
 
 void ColorTexture::Save(const std::string& t_Filename) const { return; }
 
-texture_t GetTexture(const std::string& t_Name) { return s_LoadedTextures[t_Name]; }
+texture_t GetTexture(const std::string& t_Name) { return s_TextureIDToTexture[s_TexturePathToID[t_Name]]; }
+texture_t GetTexture(uint32_t t_ID) { return s_TextureIDToTexture[t_ID]; }
 
 texture_t GetDefaultTexture() { return MipmapTexture::New(BUILTINS_DIR + "untextured.png", 4, true, true); }
 

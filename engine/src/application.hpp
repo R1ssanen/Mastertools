@@ -5,6 +5,7 @@
 #include "light.hpp"
 #include "mesh.hpp"
 #include "object.hpp"
+#include "scene.hpp"
 #include "skybox.hpp"
 #include "srpch.hpp"
 #include "timer.hpp"
@@ -20,7 +21,8 @@ class App
     void Delete() { delete this; }
     void LogPerformance()
     {
-        std::clog << "Avrg. Perf: " << m_Timer.Performance() << "ms/fr, " << m_Timer.Elapsed() << "ms Elapsed\n";
+        std::clog << "Avrg. Perf: " << m_Timer.GetAveragePerformance() << "ms/fr, " << m_Timer.GetTimeElapsed()
+                  << "ms Elapsed\n";
     }
 
     static App* GetInstance()
@@ -39,23 +41,16 @@ class App
     App(App& other) = delete;
     void operator=(const App&) = delete;
 
-    void LoadMap(const std::string& t_Path = BUILTINS_DIR + "default.map");
-
   private:
     App() = default;
     ~App() = default;
 
     inline static App* m_Instance{nullptr};
     bool m_Running{true};
-    Timer m_Timer;
-
-    Skybox m_Skybox = GetDefaultSkybox();
-    Camera m_Camera = GetDefaultCamera();
+    Timer m_Timer = Timer::New();
     Context m_Context = CreateContext();
 
-    std::string m_MapName;
-    std::vector<Object> m_Objects;
-    std::vector<PointLight> m_PointLights;
+    Scene m_ActiveScene = Scene::New(BUILTINS_DIR + "default.mgls");
 };
 
 } // namespace core

@@ -31,11 +31,6 @@ int ActionCallback(void* t_UserData, SDL_Event* t_Event)
         }
     }
 
-    if (GetKey(SDL_SCANCODE_LCTRL) && GetKey(SDL_SCANCODE_S))
-    {
-        App->LoadMap();
-    }
-
     if (GetKey(SDL_SCANCODE_RETURN))
     {
         SetWireframe(!GetWireframe());
@@ -44,6 +39,10 @@ int ActionCallback(void* t_UserData, SDL_Event* t_Event)
     if (GetKey(SDL_SCANCODE_DELETE))
     {
         SetShowMipmaps(!GetShowMipmaps());
+    }
+
+    if (GetKey(SDL_SCANCODE_BACKSPACE)) {
+        SetVisualizeTiles(!GetVisualizeTiles());
     }
 
     return 0;

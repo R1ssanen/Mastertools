@@ -14,7 +14,7 @@ std::string s_AppName;
 
 float s_AmbientIntensity = 0.1f;
 
-bool s_Wireframe = false, s_ShowMipmaps = false;
+bool s_Wireframe = false, s_ShowMipmaps = false, s_VisualizeTiles = false;
 
 } // namespace
 
@@ -87,5 +87,7 @@ const bool& GetWireframe() { return s_Wireframe; }
 void SetWireframe(const bool& t_Value) { s_Wireframe = t_Value; }
 const bool& GetShowMipmaps() { return s_ShowMipmaps; }
 void SetShowMipmaps(const bool& t_Value) { s_ShowMipmaps = t_Value; }
+const bool& GetVisualizeTiles() {return s_VisualizeTiles;}
+void SetVisualizeTiles(const bool& t_Value) {s_VisualizeTiles = t_Value;}
 
 } // namespace core

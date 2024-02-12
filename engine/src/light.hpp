@@ -4,25 +4,27 @@
 #include "srpch.hpp"
 #include "vertex.hpp"
 
-namespace core {
+namespace core
+{
 
-class PointLight {
- public:
-  PointLight() = default;
-  ~PointLight() = default;
+class PointLight
+{
+  public:
+    const glm::vec3& GetPos() const { return m.Pos; }
+    const float& GetIntensity() const { return m.Intensity; }
 
-  PointLight(const glm::vec3& t_Pos, float t_Intensity);
+    float GetLighting(const Vertex& t_Vertex) const;
 
-  const glm::vec3& GetPos() const { return m_Pos; }
-  void SetPos(const glm::vec3& t_Value) { m_Pos = t_Value; }
-  const float& GetIntensity() const { return m_Intensity; }
+    static PointLight New(const glm::vec3& t_Pos, float t_Intensity);
 
-  float GetLighting(const Vertex& t_Vertex) const;
+  private:
+    struct _M
+    {
+        glm::vec3 Pos;
+        float Intensity;
+    } m;
 
- private:
-  glm::vec3 m_Pos{0.f};
-  float m_Intensity{1.f};
+    PointLight(_M&& t_Data) : m{std::move(t_Data)} {}
 };
 
-
-}  // namespace core
+} // namespace core

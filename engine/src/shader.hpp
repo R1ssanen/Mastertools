@@ -16,7 +16,7 @@ inline void OpaqueSTD(Context& t_Context, const texture_t& t_Texture, const glm:
     uint32_t Pixel = t_Texture->Sample(t_UV, t_Pos.z);
 
     unsigned Loc = static_cast<unsigned>(t_Pos.y * t_Context.GetWidth() + t_Pos.x);
-    t_Context.ColorBuffer[Loc] = ModUint32(Pixel, t_Light); //  * (1.f - t_Pos.z)
+    t_Context.ColorBuffer[Loc] = ModUint32(Pixel, t_Light);// * (1.f - t_Pos.z));
     t_Context.DepthBuffer[Loc] = t_Pos.z;
 }
 

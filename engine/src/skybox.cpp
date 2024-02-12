@@ -15,9 +15,11 @@
 namespace core
 {
 
-triangle_vector_t Skybox::Transform(const Camera& t_Camera, const Context& t_Context)
+Skybox Skybox::New(const mesh_t& t_Mesh) { return Skybox(_M{.Mesh = t_Mesh, .Timer = Timer::New(), .State = 0.f}); }
+
+triangle_vector_t Skybox::Transform(const Camera& t_Camera, const Context& t_Context) const
 {
-    std::vector<Vertex> TransVertices{m_Mesh->GetVertices()};
+    std::vector<Vertex> TransVertices{m.Mesh->GetVertices()};
     triangle_vector_t TrianglesOut;
 
     glm::mat4 MatViewProjection{t_Camera.GetMatProjection(t_Context.GetWidth(), t_Context.GetHeight()) *
@@ -28,12 +30,12 @@ triangle_vector_t Skybox::Transform(const Camera& t_Camera, const Context& t_Con
         Vertex.m_Pos = MatViewProjection * glm::translate(glm::mat4(1.f), t_Camera.GetPos()) * Vertex.m_Pos;
     }
 
-    for (size_t ID = 0; ID < m_Mesh->GetIndices().size(); ID += 3)
+    for (size_t ID = 0; ID < m.Mesh->GetIndices().size(); ID += 3)
     {
         triangle_t UnclippedTri{TransVertices[ID], TransVertices[ID + 1], TransVertices[ID + 2]};
 
         // only clip against near plane
-        for (triangle_t& Tri : ClipTriangle(UnclippedTri, t_Camera.GetFrustum()[0]))
+        for (triangle_t& Tri : ClipTriangle(UnclippedTri, t_Camera.GetClipFrustum()[0]))
         {
             for (Vertex& Vertex : Tri)
             {
@@ -52,12 +54,10 @@ triangle_vector_t Skybox::Transform(const Camera& t_Camera, const Context& t_Con
         }
     }
 
-    m_Timer.Tick();
-    m_State = (std::cos(m_Timer.Elapsed() * 0.001f) + 1.f) * 0.5f;
     return TrianglesOut;
 }
 
-void Skybox::Render(const Camera& t_Camera, Context& t_Context)
+void Skybox::Render(const Camera& t_Camera, Context& t_Context) const
 {
     const triangle_vector_t RenderTris = Transform(t_Camera, t_Context);
 
@@ -67,7 +67,12 @@ void Skybox::Render(const Camera& t_Camera, Context& t_Context)
     }
 }
 
-void Skybox::RenderTri(Context& t_Context, const triangle_t& t_Tri)
+void Skybox::Update() {
+    m.Timer.Tick();
+    m.State = (std::cos(m.Timer.GetTimeElapsed() * 0.001f) + 1.f) * 0.5f;
+}
+
+void Skybox::RenderTri(Context& t_Context, const triangle_t& t_Tri) const
 {
     const auto [a, b, c] = t_Tri;
 
@@ -112,7 +117,7 @@ void Skybox::RenderTri(Context& t_Context, const triangle_t& t_Tri)
                 float u = std::fabs(bc0 * a.m_UV.x + bc1 * b.m_UV.x + bc2 * c.m_UV.x) * w;
                 float v = std::fabs(bc0 * a.m_UV.y + bc1 * b.m_UV.y + bc2 * c.m_UV.y) * w;
 
-                t_Context.ColorBuffer[row + x] = m_Mesh->Texture->Sample(glm::vec2(u, v), 0.f);
+                t_Context.ColorBuffer[row + x] = GetTexture(m.Mesh->GetTextureID())->Sample(glm::vec2(u, v), 0.f);
             }
 
             else
@@ -194,6 +199,6 @@ void Skybox::RenderTri(Context& t_Context, const Tri& t_Tri) {
 }
 */
 
-Skybox GetDefaultSkybox() { return Skybox(LoadAsset(BUILTINS_DIR, "skybox.obj", false, false)[0]); }
+Skybox GetDefaultSkybox() { return Skybox::New(LoadAsset(BUILTINS_DIR, "skybox.obj", false, false)[0]); }
 
 } // namespace core

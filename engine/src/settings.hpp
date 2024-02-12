@@ -40,5 +40,7 @@ const bool& GetWireframe();
 void SetWireframe(const bool& t_Value);
 const bool& GetShowMipmaps();
 void SetShowMipmaps(const bool& t_Value);
+const bool& GetVisualizeTiles();
+void SetVisualizeTiles(const bool& t_Value);
 
 } // namespace core

@@ -9,15 +9,20 @@ namespace core
 class Plane
 {
   public:
-    Plane(const glm::vec3& t_Point, const glm::vec3& t_Normal) : m_Point{t_Point}, m_Normal{t_Normal} {}
+    float SignedDistance(const glm::vec3& t_Point) const;
 
-    float SignedDistance(const glm::vec3& t_Point) const { return glm::dot(m_Normal, t_Point - m_Point); }
+    const glm::vec3& GetPoint() const { return m.Point; }
+    const glm::vec3& GetNormal() const { return m.Normal; }
 
-    const glm::vec3& GetPoint() const { return m_Point; }
-    const glm::vec3& GetNormal() const { return m_Normal; }
+    static Plane New(const glm::vec3& t_Normal, const glm::vec3& t_Point = glm::vec3(0.f));
 
   private:
-    glm::vec3 m_Point, m_Normal;
+    struct _M {
+        glm::vec3 Point;
+        glm::vec3 Normal;
+    } m;
+
+    Plane(_M&& t_Data) : m{std::move(t_Data)} {}
 };
 
 using Frustum = std::vector<Plane>;

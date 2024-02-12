@@ -14,18 +14,24 @@ namespace core
 class Skybox
 {
   public:
-    void Render(const Camera& t_Camera, Context& t_Context);
+    void Render(const Camera& t_Camera, Context& t_Context) const;
+    void Update();
 
-    Skybox() = default;
-    Skybox(const mesh_t& t_Mesh) : m_Mesh{t_Mesh} {}
+    static Skybox New(const mesh_t& t_Mesh);
 
   private:
-    triangle_vector_t Transform(const Camera& t_Camera, const Context& t_Context);
-    void RenderTri(core::Context& t_Context, const triangle_t& t_Tri);
+    triangle_vector_t Transform(const Camera& t_Camera, const Context& t_Context) const;
+    void RenderTri(core::Context& t_Context, const triangle_t& t_Tri) const;
 
-    mesh_t m_Mesh;
-    Timer m_Timer;
-    double m_State{0.f};
+
+    struct _M
+    {
+        mesh_t Mesh;
+        core::Timer Timer;
+        double State;
+    } m;
+
+    Skybox(_M&& t_Data) : m{std::move(t_Data)} {}
 };
 
 Skybox GetDefaultSkybox();

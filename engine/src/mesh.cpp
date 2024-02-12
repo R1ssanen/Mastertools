@@ -14,34 +14,33 @@ std::unordered_map<std::string, core::mesh_vector_t> s_LoadedAssets;
 namespace core
 {
 
-Mesh::Mesh(const std::vector<Vertex>& t_Vertices, const std::vector<unsigned>& t_Indices, const texture_t& t_Texture)
-    : Texture{t_Texture}, m_Vertices{t_Vertices}, m_Indices{t_Indices}
+Mesh Mesh::New(const std::vector<Vertex>& t_Vertices, const std::vector<unsigned>& t_Indices, uint32_t t_TextureID)
 {
     glm::vec3 VertexSum{0.f};
+
     for (const Vertex& Vertex : t_Vertices)
     {
         VertexSum += glm::vec3(Vertex.m_Pos);
     }
 
-    glm::vec3 MassCenter{VertexSum / static_cast<float>(t_Vertices.size())};
+    glm::vec3 MassCenter = VertexSum / static_cast<float>(t_Vertices.size());
 
-    float MaxDistance{0.f};
+    float MaxDistance = 0.f;
     for (const Vertex& Vertex : t_Vertices)
     {
-        float Distance{glm::distance(MassCenter, glm::vec3(Vertex.m_Pos))};
+        float Distance = glm::distance(MassCenter, glm::vec3(Vertex.m_Pos));
         if (Distance > MaxDistance)
         {
             MaxDistance = Distance;
         }
     }
 
-    m_MassCenter = MassCenter;
-    m_BoundingRadius = MaxDistance;
+    return Mesh(_M{.Vertices = t_Vertices,
+                   .Indices = t_Indices,
+                   .MassCenter = MassCenter,
+                   .BoundingRadius = MaxDistance,
+                   .TextureID = t_TextureID});
 }
-
-const std::vector<Vertex>& Mesh::GetVertices() const { return m_Vertices; }
-
-const std::vector<unsigned>& Mesh::GetIndices() const { return m_Indices; }
 
 mesh_vector_t LoadAsset(const std::string& t_Directory, const std::string& t_Name, bool t_IsMipmapped,
                         bool t_IsDoublesided)
@@ -89,7 +88,7 @@ mesh_vector_t LoadAsset(const std::string& t_Directory, const std::string& t_Nam
                                             Transparent ? false : t_IsDoublesided);
             }
 
-            Meshes.push_back(std::make_shared<Mesh>(Vertices, ObjlMesh.Indices, Texture));
+            Meshes.push_back(std::make_shared<Mesh>(Mesh::New(Vertices, ObjlMesh.Indices, Texture->GetID())));
         }
 
         else if (!TextureExists && ObjlMesh.MeshMaterial.Kd != objl::Vector3(0.f, 0.f, 0.f))
@@ -99,12 +98,12 @@ mesh_vector_t LoadAsset(const std::string& t_Directory, const std::string& t_Nam
                                                            ObjlMesh.MeshMaterial.Kd.Z, ObjlMesh.MeshMaterial.d),
                                                   Transparent, Transparent ? false : t_IsDoublesided);
 
-            Meshes.push_back(std::make_shared<Mesh>(Vertices, ObjlMesh.Indices, Texture));
+            Meshes.push_back(std::make_shared<Mesh>(Mesh::New(Vertices, ObjlMesh.Indices, Texture->GetID())));
         }
 
         else
         {
-            Meshes.push_back(std::make_shared<Mesh>(Vertices, ObjlMesh.Indices, GetDefaultTexture()));
+            Meshes.push_back(std::make_shared<Mesh>(Mesh::New(Vertices, ObjlMesh.Indices, GetDefaultTexture()->GetID())));
         }
     }
 

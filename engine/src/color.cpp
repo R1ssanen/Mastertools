@@ -1,5 +1,7 @@
 #include "color.hpp"
 
+#include <limits>
+
 #include "srpch.hpp"
 
 namespace core
@@ -61,6 +63,16 @@ uint32_t ModUint32(uint32_t t_Color, float t_Scalar)
 {
     glm::vec4 Color{UnpackToVec4(t_Color)};
     return ToUint32(glm::vec4(Color.r * t_Scalar, Color.g * t_Scalar, Color.b * t_Scalar, Color.a));
+}
+
+float Luminosity(const glm::vec3& t_Color) {
+    constexpr glm::vec3 Weights = {0.2126f, 0.7152f, 0.0722f};
+    return glm::dot(t_Color, Weights);
+}
+
+uint32_t GetRandomColor() {
+    float S = glm::linearRand<float>(0.f, 1.f);
+    return static_cast<uint32_t>(std::numeric_limits<uint32_t>::max() * S);
 }
 
 } // namespace core

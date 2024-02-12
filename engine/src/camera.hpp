@@ -18,28 +18,29 @@ class Camera
     glm::vec3 GetRight() const;
     glm::vec3 GetUp() const;
 
-    const glm::vec3& GetPos() const { return m_Pos; }
-    const glm::vec3& GetAngle() const { return m_Angle; }
-    const Frustum& GetFrustum() const { return m_Frustum; }
-    float GetInverseFar() const { return 1.f / m_Far; }
+    const glm::vec3& GetPos() const { return m.Pos; }
+    const glm::vec3& GetAngle() const { return m.Angle; }
+    const float& GetFov() const { return m.Fov; }
+    const float& GetNear() const { return m.Near; }
+    const float& GetFar() const { return m.Far; }
+    const Frustum& GetClipFrustum() const { return m.ClipFrustum; }
+    const Frustum& GetCullFrustum() const { return m.CullFrustum; }
+    float GetInverseFar() const { return 1.f / m.Far; }
 
     void HandleMovement();
     void HandleRotation();
 
-    Camera() = default;
-    Camera(const glm::vec3& t_Pos, const glm::vec3& t_Angle, float t_FOV, float t_Near, float t_Far)
-        : m_Pos{t_Pos}, m_Angle{t_Angle}, m_Fov{t_FOV}, m_Near{t_Near}, m_Far{t_Far}
-    {
-    }
+    static Camera New(const glm::vec3& t_Pos, const glm::vec3& t_Angle, float t_Fov, float t_Near, float t_Far);
 
   private:
-    glm::vec3 m_Pos, m_Angle;
-    float m_Fov, m_Near, m_Far;
+    struct _M
+    {
+        glm::vec3 Pos, Angle;
+        float Fov, Near, Far;
+        Frustum ClipFrustum, CullFrustum;
+    } m;
 
-    Frustum m_Frustum{
-        Plane(glm::vec3(0.f, 0.f, m_Near), glm::vec3(0.f, 0.f, 1.f)), // near
-        Plane(glm::vec3(0.f, 0.f, m_Far), glm::vec3(0.f, 0.f, -1.f))  // far
-    };
+    Camera(_M&& t_Data) : m{std::move(t_Data)} {}
 };
 
 Camera GetDefaultCamera();
