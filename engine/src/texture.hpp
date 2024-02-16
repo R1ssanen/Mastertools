@@ -8,7 +8,7 @@ namespace core
 class ImageData
 {
   public:
-    ~ImageData() = default;
+    virtual ~ImageData() = default;
     ImageData(uint32_t* t_Data, unsigned t_Width, unsigned t_Height)
         : Data{t_Data}, m_Width{t_Width}, m_Height{t_Height}, m_Resolution{t_Width * t_Height}
     {
@@ -121,5 +121,6 @@ texture_t GetTexture(const std::string& t_Name);
 texture_t GetTexture(uint32_t t_ID);
 
 texture_t GetDefaultTexture();
+texture_t GetDefaultSkyboxTexture();
 
 } // namespace core

@@ -11,7 +11,7 @@ namespace core
 
 uint32_t ToUint32(float r, float g, float b, float a)
 {
-    glm::u8vec4 Color{a, b, g, r};
+    glm::u8vec4 Color{a * 255, b * 255, g * 255, r * 255};
     return glm::packUint4x8(Color);
 }
 

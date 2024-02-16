@@ -8,16 +8,10 @@
 namespace core
 {
 
-class Vertex
+struct Vertex
 {
-  public:
-    Vertex(const glm::vec4& t_Pos, const glm::vec4& t_Normal, const glm::vec2& t_UV,
-           float t_Light = GetSettingAmbientIntensity())
-        : m_Pos{t_Pos}, m_Normal{t_Normal}, m_UV{t_UV}, m_Light{t_Light}
-    {
-    }
-
     glm::vec4 m_Pos{0.f, 0.f, 0.f, 1.f}, m_Normal{0.f};
+    glm::vec3 m_LightColor{0.f};
     glm::vec2 m_UV{0.f};
     float m_Light;
 };
@@ -38,7 +32,9 @@ inline std::pair<glm::vec2, glm::vec2> GetBoundingBox(const triangle_t& t_Tri) {
 struct DrawTri
 {
     triangle_t m_Tri;
+    shader_t m_Shader;
     uint32_t m_TextureID;
+    float m_Alpha;
 
     static bool FarToClose(const DrawTri& t_First, const DrawTri& t_Second)
     {

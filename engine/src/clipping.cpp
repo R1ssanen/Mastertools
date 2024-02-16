@@ -18,16 +18,18 @@ Plane Plane::New(const glm::vec3& t_Normal, const glm::vec3& t_Point) {
 
 Vertex IntersectLine(const Plane& t_Plane, const Vertex& A, const Vertex& B)
 {
-    const float T = glm::clamp(glm::dot(t_Plane.GetPoint() - glm::vec3(A.m_Pos), t_Plane.GetNormal()) /
-                                   glm::dot(glm::vec3(B.m_Pos - A.m_Pos), t_Plane.GetNormal()),
-                               0.f, 1.f);
+    const float T = glm::clamp(
+            glm::dot(t_Plane.GetPoint() - glm::vec3(A.m_Pos), t_Plane.GetNormal()) /
+            glm::dot(glm::vec3(B.m_Pos - A.m_Pos), t_Plane.GetNormal()),
+        0.f, 1.f);
 
-    glm::vec4 Pos = A.m_Pos + (B.m_Pos - A.m_Pos) * T;
-    glm::vec4 Normal = glm::normalize(A.m_Normal + (B.m_Normal - A.m_Normal) * T);
-    glm::vec2 UV = A.m_UV + (B.m_UV - A.m_UV) * T;
-    float Light = std::min(A.m_Light + (B.m_Light - A.m_Light) * T, 1.f);
-
-    return Vertex(Pos, Normal, UV, Light);
+    return Vertex{
+        .m_Pos = A.m_Pos + (B.m_Pos - A.m_Pos) * T,
+        .m_Normal = glm::normalize(A.m_Normal + (B.m_Normal - A.m_Normal) * T),
+        .m_LightColor = A.m_LightColor + (B.m_LightColor - A.m_LightColor) * T,
+        .m_UV = A.m_UV + (B.m_UV - A.m_UV) * T,
+        .m_Light = std::min(A.m_Light + (B.m_Light - A.m_Light) * T, 1.f)
+    };
 }
 
 glm::vec3 IntersectLine(const Plane& t_Plane, const glm::vec3& A, const glm::vec3& B)
@@ -44,7 +46,7 @@ triangle_vector_t ClipTriangle(const triangle_t& t_Tri, const Plane& t_Plane)
     const auto [a, b, c] = t_Tri;
 
     switch (((t_Plane.SignedDistance(c.m_Pos) >= 0) << 2) + ((t_Plane.SignedDistance(b.m_Pos) >= 0) << 1) +
-            (t_Plane.SignedDistance(a.m_Pos) >= 0))
+             (t_Plane.SignedDistance(a.m_Pos) >= 0))
     {
     case 0:
         return triangle_vector_t{};

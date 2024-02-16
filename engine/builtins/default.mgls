@@ -1,26 +1,36 @@
 {
-  "scene": "default",
+  "scene": "default_1",
+
   "objects": [
     {
-      "assets": [
-        {
-          "directory": "../../resources/assets/home/",
-          "file": "home.obj"
-        }
-      ]
+      "path": "../../resources/assets/home/home.obj"
     }
   ],
+
+  "camera": {"far": 20},
+
   "lights": {
     "point": [
       {
         "pos": [
-          0,
+          1,
           -1.5,
           0
         ],
-        "intensity": 2.5
+        "color": [1, 1, 0],
+        "intensity": 1
+      },
+      {
+        "pos": [
+          -1,
+          -1.5,
+          0
+        ],
+        "color": [0, 1, 1],
+        "intensity": 1
       }
     ],
     "directional": []
   }
+
 }

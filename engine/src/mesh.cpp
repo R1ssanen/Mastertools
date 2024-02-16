@@ -14,13 +14,13 @@ std::unordered_map<std::string, core::mesh_vector_t> s_LoadedAssets;
 namespace core
 {
 
-Mesh Mesh::New(const std::vector<Vertex>& t_Vertices, const std::vector<unsigned>& t_Indices, uint32_t t_TextureID)
+mesh_t Mesh::New(const std::vector<Vertex>& t_Vertices, const std::vector<unsigned>& t_Indices, uint32_t t_TextureID)
 {
-    glm::vec3 VertexSum{0.f};
+    glm::vec4 VertexSum{0.f};
 
     for (const Vertex& Vertex : t_Vertices)
     {
-        VertexSum += glm::vec3(Vertex.m_Pos);
+        VertexSum += Vertex.m_Pos;
     }
 
     glm::vec3 MassCenter = VertexSum / static_cast<float>(t_Vertices.size());
@@ -35,26 +35,35 @@ Mesh Mesh::New(const std::vector<Vertex>& t_Vertices, const std::vector<unsigned
         }
     }
 
-    return Mesh(_M{.Vertices = t_Vertices,
-                   .Indices = t_Indices,
-                   .MassCenter = MassCenter,
-                   .BoundingRadius = MaxDistance,
-                   .TextureID = t_TextureID});
+    return std::make_shared<Mesh>(
+        Mesh(
+            _M{
+                .Vertices = t_Vertices,
+                .Indices = t_Indices,
+                .MassCenter = MassCenter,
+                .BoundingRadius = MaxDistance,
+                .TextureID = t_TextureID
+            }
+        )
+    );
 }
 
-mesh_vector_t LoadAsset(const std::string& t_Directory, const std::string& t_Name, bool t_IsMipmapped,
-                        bool t_IsDoublesided)
+mesh_vector_t LoadAsset(const std::filesystem::path& t_Path, bool t_IsMipmapped, bool t_IsDoublesided)
 {
-    if (s_LoadedAssets.count(t_Directory + t_Name))
+    const std::string Directory = std::string(t_Path.parent_path()) + "/",
+                      Filename = t_Path.filename();
+    const std::string FullPath = Directory + Filename;
+
+    if (s_LoadedAssets.count(FullPath))
     {
-        return s_LoadedAssets[t_Directory + t_Name];
+        return s_LoadedAssets[FullPath];
     }
 
     objl::Loader Loader;
 
-    if (!Loader.LoadFile(t_Directory + t_Name)) [[unlikely]]
+    if (!Loader.LoadFile(FullPath)) [[unlikely]]
     {
-        throw std::invalid_argument("Asset '" + t_Directory + t_Name + "' could not be loaded.");
+        throw std::invalid_argument("Asset '" + FullPath + "' could not be loaded.");
     }
 
     mesh_vector_t Meshes;
@@ -65,50 +74,73 @@ mesh_vector_t LoadAsset(const std::string& t_Directory, const std::string& t_Nam
 
         for (const objl::Vertex& Vertex : ObjlMesh.Vertices)
         {
-            Vertices.push_back(core::Vertex(glm::vec4(Vertex.Position.X, Vertex.Position.Y, Vertex.Position.Z, 1.f),
-                                            glm::vec4(Vertex.Normal.X, Vertex.Normal.Y, Vertex.Normal.Z, 1.f),
-                                            glm::vec2(Vertex.TextureCoordinate.X, Vertex.TextureCoordinate.Y)));
+            Vertices.push_back(core::Vertex{
+                .m_Pos = glm::vec4(Vertex.Position.X, Vertex.Position.Y, Vertex.Position.Z, 1.f),
+                .m_Normal = glm::vec4(Vertex.Normal.X, Vertex.Normal.Y, Vertex.Normal.Z, 1.f),
+                .m_UV = glm::vec2(Vertex.TextureCoordinate.X, Vertex.TextureCoordinate.Y)
+            });
         }
 
-        const bool TextureExists{!ObjlMesh.MeshMaterial.map_Kd.empty()};
-        const bool Transparent{ObjlMesh.MeshMaterial.d < 1.f};
+        const bool TextureExists = !ObjlMesh.MeshMaterial.map_Kd.empty();
+        const bool IsTransparent = ObjlMesh.MeshMaterial.d < 1.f || !ObjlMesh.MeshMaterial.map_d.empty();
 
         if (TextureExists)
         {
             texture_t Texture;
             if (t_IsMipmapped)
             {
-                Texture = MipmapTexture::New(t_Directory + ObjlMesh.MeshMaterial.map_Kd, 6, Transparent,
-                                             Transparent ? false : t_IsDoublesided);
+                Texture = MipmapTexture::New(Directory + ObjlMesh.MeshMaterial.map_Kd, 6, IsTransparent,
+                                             IsTransparent ? false : t_IsDoublesided);
             }
 
             else
             {
-                Texture = ImageTexture::New(t_Directory + ObjlMesh.MeshMaterial.map_Kd, Transparent,
-                                            Transparent ? false : t_IsDoublesided);
+                Texture = ImageTexture::New(Directory + ObjlMesh.MeshMaterial.map_Kd, IsTransparent,
+                                            IsTransparent ? false : t_IsDoublesided);
             }
 
-            Meshes.push_back(std::make_shared<Mesh>(Mesh::New(Vertices, ObjlMesh.Indices, Texture->GetID())));
+            Meshes.push_back(Mesh::New(Vertices, ObjlMesh.Indices, Texture->GetID()));
         }
 
-        else if (!TextureExists && ObjlMesh.MeshMaterial.Kd != objl::Vector3(0.f, 0.f, 0.f))
+        else if (ObjlMesh.MeshMaterial.Kd != objl::Vector3(0.f, 0.f, 0.f))
         {
             texture_t Texture = ColorTexture::New(ObjlMesh.MeshMaterial.name,
                                                   ToUint32(ObjlMesh.MeshMaterial.Kd.X, ObjlMesh.MeshMaterial.Kd.Y,
                                                            ObjlMesh.MeshMaterial.Kd.Z, ObjlMesh.MeshMaterial.d),
-                                                  Transparent, Transparent ? false : t_IsDoublesided);
+                                                  IsTransparent, IsTransparent ? false : t_IsDoublesided);
 
-            Meshes.push_back(std::make_shared<Mesh>(Mesh::New(Vertices, ObjlMesh.Indices, Texture->GetID())));
+            Meshes.push_back(Mesh::New(Vertices, ObjlMesh.Indices, Texture->GetID()));
         }
 
         else
         {
-            Meshes.push_back(std::make_shared<Mesh>(Mesh::New(Vertices, ObjlMesh.Indices, GetDefaultTexture()->GetID())));
+            Meshes.push_back(Mesh::New(Vertices, ObjlMesh.Indices, GetDefaultTexture()->GetID()));
         }
     }
 
-    s_LoadedAssets[t_Directory + t_Name] = Meshes;
-    return s_LoadedAssets[t_Directory + t_Name];
+    s_LoadedAssets[FullPath] = Meshes;
+    return s_LoadedAssets[FullPath];
+}
+
+mesh_t LoadAsset(const std::string& t_Path, uint32_t t_TextureID) {
+    objl::Loader Loader;
+
+    if (!Loader.LoadFile(t_Path)) [[unlikely]]
+    {
+        throw std::invalid_argument("Asset '" + t_Path + "' could not be loaded.");
+    }
+
+    std::vector<Vertex> Vertices;
+    for (const objl::Vertex& Vertex : Loader.LoadedVertices)
+    {
+        Vertices.push_back(core::Vertex{
+                .m_Pos = glm::vec4(Vertex.Position.X, Vertex.Position.Y, Vertex.Position.Z, 1.f),
+                .m_Normal = glm::vec4(Vertex.Normal.X, Vertex.Normal.Y, Vertex.Normal.Z, 1.f),
+                .m_UV = glm::vec2(Vertex.TextureCoordinate.X, Vertex.TextureCoordinate.Y)
+            });
+    }
+
+    return Mesh::New(Vertices, Loader.LoadedIndices, t_TextureID);
 }
 
 } // namespace core

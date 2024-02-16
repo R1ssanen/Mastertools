@@ -7,10 +7,12 @@
 #include "srpch.hpp"
 #include "texture.hpp"
 #include "vertex.hpp"
+#include "buffer.hpp"
 
 namespace
 {
 
+/*
 void RenderTriTop(core::Context& t_Context, core::Vertex& a, core::Vertex& b, core::Vertex& c,
                   core::texture_t t_Texture, float t_InverseFar, const core::shader_t& t_Shader)
 {
@@ -53,7 +55,7 @@ void RenderTriTop(core::Context& t_Context, core::Vertex& a, core::Vertex& b, co
 
             float U = std::fabs(u) * W, V = std::fabs(v) * W;
 
-            t_Shader(t_Context, t_Texture, glm::vec4(x, y, Z, W), glm::vec2(U, V), glm::clamp(g, 0.f, 1.f));
+            t_Shader(t_Context, t_Texture, glm::vec4(x, y, Z, W), glm::vec2(U, V), glm::clamp(g, 0.f, 1.f), nullptr);
         }
     }
 }
@@ -100,95 +102,76 @@ void RenderTriBottom(core::Context& t_Context, core::Vertex& a, core::Vertex& b,
 
             float U = std::fabs(u) * W, V = std::fabs(v) * W;
 
-            t_Shader(t_Context, t_Texture, glm::vec4(x, y, Z, W), glm::vec2(U, V), glm::clamp(g, 0.f, 1.f));
+            t_Shader(t_Context, t_Texture, glm::vec4(x, y, Z, W), glm::vec2(U, V), glm::clamp(g, 0.f, 1.f), nullptr);
         }
         
     }
 }
-
+*/
 } // namespace
 
 namespace core
 {
 
-void DrawLine(Context& t_Context, const glm::vec3& A, const glm::vec3& B, uint32_t t_Col)
-{
-    const glm::vec3 AB = B - A;
-    const glm::vec2 MaxBoundary = glm::vec2(t_Context.GetWidth() - 1, t_Context.GetHeight() - 1);
+void DrawWireframe(Context& t_Context, const triangle_t& t_Tri, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    glm::vec2 Ratio = GetResolutionRatio();
 
-    float Step = 1.f / glm::fastLength(AB);
-    for (float T = 0.f; T <= 1.f; T += Step)
-    {
-        glm::vec2 Point = A + AB * T;
+    SDL_FPoint Points[4] = {{t_Tri[0].m_Pos.x * Ratio.x, t_Tri[0].m_Pos.y * Ratio.y},
+                            {t_Tri[1].m_Pos.x * Ratio.x, t_Tri[1].m_Pos.y * Ratio.y},
+                            {t_Tri[2].m_Pos.x * Ratio.x, t_Tri[2].m_Pos.y * Ratio.y}};
+    Points[3] = Points[0];
 
-        if (glm::clamp(Point, glm::vec2(0.f), MaxBoundary) != Point)
-        {
-            continue;
-        }
+    SDL_FRect Rects[3] = {{Points[0].x - 2.f, Points[0].y - 2.f, 4.f, 4.f},
+                            {Points[1].x - 2.f, Points[1].y - 2.f, 4.f, 4.f},
+                            {Points[2].x - 2.f, Points[2].y - 2.f, 4.f, 4.f}};
 
-        size_t Loc = static_cast<size_t>(Point.y) * t_Context.GetWidth() + static_cast<size_t>(Point.x);
+    SDL_SetRenderDrawColor(t_Context.Renderer, r, g, b, a);
+    SDL_RenderDrawLinesF(t_Context.Renderer, Points, 4);
 
-        t_Context.ColorBuffer[Loc] = t_Col;
-        t_Context.DepthBuffer[Loc] = 0.f;
-    }
+    SDL_SetRenderDrawColor(t_Context.Renderer, r, g, b, SDL_ALPHA_OPAQUE);
+    SDL_RenderDrawRectsF(t_Context.Renderer, Rects, 3);
 }
 
-void DrawWireframe(Context& t_Context, const std::initializer_list<glm::vec3>& t_Points, bool t_Closed, uint32_t t_Col)
+void RenderTriBary(buffer_t t_Buffer, DrawTri t_DrawTri, float t_InverseFar)
 {
-    for (size_t i = 0; i < t_Points.size() - 1; i++)
-    {
-        DrawLine(t_Context, std::data(t_Points)[i], std::data(t_Points)[i + 1], t_Col);
-    }
+    auto [Min, Max] = GetBoundingBox(t_DrawTri.m_Tri);
 
-    if (t_Closed)
-    {
-        DrawLine(t_Context, std::data(t_Points)[t_Points.size() - 1], std::data(t_Points)[0], t_Col);
-    }
-}
-
-void RenderTriBary(Context& t_Context, const triangle_t& t_Tri, uint32_t t_TextureID, float t_InverseFar,
-                   const shader_t& t_Shader, const glm::vec2& t_BoundsMin, const glm::vec2& t_BoundsMax)
-{
-    auto [Min, Max] = GetBoundingBox(t_Tri);
-
-    Min = glm::clamp(Min, t_BoundsMin, t_BoundsMax);
-    Max = glm::clamp(Max, t_BoundsMin, t_BoundsMax);
+    Min = glm::clamp(Min, glm::vec2(0.f), glm::vec2(t_Buffer->GetWidth() - 1, t_Buffer->GetHeight() - 1));
+    Max = glm::clamp(Max, glm::vec2(0.f), glm::vec2(t_Buffer->GetWidth() - 1, t_Buffer->GetHeight() - 1));
 
     if (static_cast<unsigned>(Max.x - Min.x) * static_cast<unsigned>(Max.y - Min.y) == 0)
     {
         return; // zero area triangle
     }
 
-    auto [a, b, c] = t_Tri;
-    texture_t Texture = GetTexture(t_TextureID);
+    auto [a, b, c] = t_DrawTri.m_Tri;
+    texture_t Texture = GetTexture(t_DrawTri.m_TextureID);
 
     const float InverseDoubleArea = 1.f / DoubleTriangleArea(a.m_Pos.x, a.m_Pos.y, b.m_Pos.x, b.m_Pos.y, c.m_Pos.x, c.m_Pos.y);
-    const glm::vec3 Column1{
-        glm::cross(glm::vec3(a.m_Pos.x, b.m_Pos.x, c.m_Pos.x), glm::vec3(a.m_Pos.y, b.m_Pos.y, c.m_Pos.y))},
-        Column2{b.m_Pos.y - c.m_Pos.y, c.m_Pos.y - a.m_Pos.y, a.m_Pos.y - b.m_Pos.y},
-        Column3{c.m_Pos.x - b.m_Pos.x, a.m_Pos.x - c.m_Pos.x, b.m_Pos.x - a.m_Pos.x};
-    const glm::mat3 MatBarycentric{Column1, Column2, Column3};
+    const glm::vec3 Column1 = glm::cross(glm::vec3(a.m_Pos.x, b.m_Pos.x, c.m_Pos.x), glm::vec3(a.m_Pos.y, b.m_Pos.y, c.m_Pos.y)),
+                    Column2 = glm::vec3(b.m_Pos.y - c.m_Pos.y, c.m_Pos.y - a.m_Pos.y, a.m_Pos.y - b.m_Pos.y),
+                    Column3 = glm::vec3(c.m_Pos.x - b.m_Pos.x, a.m_Pos.x - c.m_Pos.x, b.m_Pos.x - a.m_Pos.x);
+    
+    const glm::mat3 MatBarycentric = {Column1, Column2, Column3};
 
     for (int y = Min.y; y <= Max.y; y++)
     {
-        int Row = y * t_Context.GetWidth();
+        int Row = y * t_Buffer->GetWidth();
         bool Outside = true;
 
         for (int x = Min.x; x <= Max.x; x++)
         {
             glm::vec3 Barycoord = MatBarycentric * glm::vec3(1, x, y);
-
             if (Barycoord.x >= 0.f && Barycoord.y >= 0.f && Barycoord.z >= 0.f)
             {
                 Outside = false;
                 Barycoord *= InverseDoubleArea;
 
                 float w = 1.f / (a.m_Pos.w * Barycoord.x + b.m_Pos.w * Barycoord.y + c.m_Pos.w * Barycoord.z);
-                float z = glm::clamp((a.m_Pos.z * Barycoord.x + b.m_Pos.z * Barycoord.y + c.m_Pos.z * Barycoord.z) * w *
-                                         t_InverseFar,
-                                     0.f, 1.f);
+                float z = glm::clamp((a.m_Pos.z * Barycoord.x + b.m_Pos.z * Barycoord.y + c.m_Pos.z * Barycoord.z) *
+                                        w * t_InverseFar, 0.f, 1.f);
 
-                if (t_Context.DepthBuffer[Row + x] <= z)
+                if (t_Buffer->GetDepth(Row + x) <= z)
                 {
                     continue;
                 }
@@ -197,9 +180,14 @@ void RenderTriBary(Context& t_Context, const triangle_t& t_Tri, uint32_t t_Textu
                 float v = std::fabs(Barycoord.x * a.m_UV.y + Barycoord.y * b.m_UV.y + Barycoord.z * c.m_UV.y) * w;
 
                 float Light = glm::clamp(Barycoord.x * a.m_Light + Barycoord.y * b.m_Light + Barycoord.z * c.m_Light,
-                                       GetSettingAmbientIntensity(), 1.f);
+                                         GetSettingAmbientIntensity(), 1.f);
 
-                t_Shader(t_Context, Texture, glm::vec4(x, y, z, w), glm::vec2(u, v), Light);
+                uint8_t R = glm::dot(Barycoord, glm::vec3(a.m_LightColor.r, b.m_LightColor.r, c.m_LightColor.r)) * 255,
+                        G = glm::dot(Barycoord, glm::vec3(a.m_LightColor.g, b.m_LightColor.g, c.m_LightColor.g)) * 255,
+                        B = glm::dot(Barycoord, glm::vec3(a.m_LightColor.b, b.m_LightColor.b, c.m_LightColor.b)) * 255;                
+                uint32_t LightColor = ToUint32(glm::clamp(glm::vec4(R, G, B, 255.f), glm::vec4(0.f), glm::vec4(255.f)));
+
+                t_DrawTri.m_Shader(t_Buffer, Texture, glm::vec4(x, y, z, w), glm::vec2(u, v), Light, static_cast<void*>(&LightColor));
             }
 
             else
@@ -213,6 +201,7 @@ void RenderTriBary(Context& t_Context, const triangle_t& t_Tri, uint32_t t_Textu
     }
 }
 
+/*
 void RenderTriScan(Context& t_Context, triangle_t& t_Tri, texture_t t_Texture, float t_InverseFar,
                    const shader_t& t_Shader)
 {
@@ -245,5 +234,5 @@ void RenderTriScan(Context& t_Context, triangle_t& t_Tri, texture_t t_Texture, f
         RenderTriBottom(t_Context, a, d, b, t_Texture, t_InverseFar, t_Shader);
     }
 }
-
+*/
 } // namespace core

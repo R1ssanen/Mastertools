@@ -14,15 +14,14 @@ namespace core
 class Skybox
 {
   public:
-    void Render(const Camera& t_Camera, Context& t_Context) const;
+    void Render(const Camera& t_Camera, buffer_t t_Buffer) const;
     void Update();
 
-    static Skybox New(const mesh_t& t_Mesh);
+    static Skybox New(uint32_t t_TextureID);
 
   private:
-    triangle_vector_t Transform(const Camera& t_Camera, const Context& t_Context) const;
-    void RenderTri(core::Context& t_Context, const triangle_t& t_Tri) const;
-
+    triangle_vector_t Transform(const Camera& t_Camera, buffer_t t_Buffer) const;
+    void RenderTri(buffer_t t_Buffer, const triangle_t& t_Tri) const;
 
     struct _M
     {
@@ -33,7 +32,5 @@ class Skybox
 
     Skybox(_M&& t_Data) : m{std::move(t_Data)} {}
 };
-
-Skybox GetDefaultSkybox();
 
 } // namespace core

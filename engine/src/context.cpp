@@ -4,11 +4,10 @@
 #include "settings.hpp"
 #include "srpch.hpp"
 #include "vertex.hpp"
-
-#include "glm/gtx/color_space.hpp"
+#include "buffer.hpp"
 
 namespace {
-    constexpr uint8_t BloomIntensity = 160;
+    constexpr uint8_t BloomIntensity = 200;
     constexpr int BloomDownsamplePasses = 4;
 }
 
@@ -17,11 +16,11 @@ namespace core
 
 void Context::Update()
 {
-    SDL_RenderClear(Renderer);
-    SDL_UpdateTexture(RenderTexture, nullptr, ColorBuffer, GetWidth() * sizeof(uint32_t));
-    SDL_RenderCopy(Renderer, RenderTexture, nullptr, &m_Viewport);
+    SDL_UpdateTexture(RenderTexture, nullptr, m.Buffer->GetColorBuffer(), GetWidth() * sizeof(uint32_t));
+    SDL_SetRenderTarget(Renderer, nullptr);
+    SDL_RenderCopy(Renderer, RenderTexture, nullptr, &m.Viewport);
 
-
+#if BLOOM_ENABLED
     {  // bloom pass 
         SDL_Texture* LuminosityTexture;
 
@@ -31,7 +30,7 @@ void Context::Update()
 
         for (size_t i = 0; i < static_cast<size_t>(GetWidth() * GetHeight()); i++) {
             glm::vec3 Pixel = UnpackToVec4(ColorBuffer[i]) * INVERSE_MAX_UINT8;
-            if (glm::luminosity(Pixel) >= 0.95f) {
+            if (Luminosity(Pixel) >= 0.85f) {
                 LuminosityPixels[i] = ColorBuffer[i];
             }
         }
@@ -64,27 +63,30 @@ void Context::Update()
         SDL_DestroyTexture(BlurTexture);
         SDL_DestroyTexture(LuminosityTexture);
     }
-  
+#endif
+
+    SDL_RenderCopy(Renderer, DebugTexture, nullptr, &m.Viewport);
+
     SDL_RenderPresent(Renderer);
+    SDL_SetRenderTarget(Renderer, DebugTexture);
+    SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 0);
+    SDL_RenderClear(Renderer);
 }
 
 void Context::Clear()
 {
-    std::fill_n(ColorBuffer, m_Spec.w * m_Spec.h, 0x00000000);
-    std::fill_n(DepthBuffer, m_Spec.w * m_Spec.h, INFINITY);
+    std::fill_n(m.Buffer->GetColorBuffer(), GetWidth() * GetHeight(), 0x00000000);
+    std::fill_n(m.Buffer->GetDepthBuffer(), GetWidth() * GetHeight(), INFINITY);
 }
 
 void Context::Delete()
 {
-    delete[] ColorBuffer;
-    delete[] DepthBuffer;
-
     SDL_DestroyWindow(Window);
     SDL_DestroyRenderer(Renderer);
     SDL_DestroyTexture(RenderTexture);
 }
 
-Context CreateContext()
+Context Context::New()
 {
     if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO) != 0)
     {
@@ -96,10 +98,16 @@ Context CreateContext()
     SDL_Rect Viewport = {0, 0, ViewResolution.x, ViewResolution.y};
     SDL_DisplayMode Spec = {SDL_PIXELFORMAT_RGBA8888, RenderResolution.x, RenderResolution.y, GetSettingRefreshRate(), 0};
 
-    Context Context = core::Context(Spec, Viewport);
+    Context Context(
+        _M{
+            .Buffer = Buffer::New(Spec.w, Spec.h),
+            .Spec = Spec,
+            .Viewport = Viewport
+        }
+    );
 
     Context.Window = SDL_CreateWindow(("Mastertools Softengine" + GetAppName()).c_str(), SDL_WINDOWPOS_CENTERED,
-                                      SDL_WINDOWPOS_CENTERED, ViewResolution.x, ViewResolution.y, SDL_WINDOW_RESIZABLE);
+                                      SDL_WINDOWPOS_CENTERED, ViewResolution.x, ViewResolution.y, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
     if (!Context.Window)
     {
@@ -109,11 +117,14 @@ Context CreateContext()
     SDL_SetWindowDisplayMode(Context.Window, &Spec);
 
     Context.Renderer = SDL_CreateRenderer(Context.Window, -1, SDL_RENDERER_ACCELERATED);
+    
     Context.RenderTexture = SDL_CreateTexture(Context.Renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
                                               RenderResolution.x, RenderResolution.y);
-
-    Context.ColorBuffer = new uint32_t[RenderResolution.x * RenderResolution.y];
-    Context.DepthBuffer = new float[RenderResolution.x * RenderResolution.y];
+    
+    Context.DebugTexture = SDL_CreateTexture(Context.Renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
+                                              ViewResolution.x, ViewResolution.y);
+    SDL_SetTextureBlendMode(Context.DebugTexture, SDL_BLENDMODE_ADD);
+    SDL_SetRenderDrawBlendMode(Context.Renderer, SDL_BLENDMODE_BLEND);
 
     return Context;
 }

@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME}
   src/settings.cpp
   src/scene.cpp
   src/timer.cpp
+  src/emitter.cpp
 )
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC "deps/srpch.hpp")
@@ -40,7 +41,7 @@ IF(OpenMP_CXX_FOUND)
 ENDIF()
 
 IF(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE EQUAL Debug)
-  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -pg -g -flto=auto -march=native -mavx2)
+  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -pg -g -flto=auto -lphread -D_GLIBCXX_PARALLEL -march=native -mavx2)
 ELSE()
   target_compile_options(${PROJECT_NAME} PRIVATE -Wall -pg -O3 -flto=auto -march=native -mavx2) # -fomit-frame-pointer
 ENDIF()

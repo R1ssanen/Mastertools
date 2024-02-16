@@ -8,9 +8,9 @@
 namespace core
 {
 
-PointLight PointLight::New(const glm::vec3& t_Pos, float t_Intensity)
+PointLight PointLight::New(const glm::vec3& t_Pos, const glm::vec3& t_Color, float t_Intensity)
 {
-    return PointLight(_M{.Pos = t_Pos, .Intensity = t_Intensity});
+    return PointLight(_M{.Pos = t_Pos, .Color = t_Color, .Intensity = t_Intensity});
 }
 
 float PointLight::GetLighting(const Vertex& t_Vertex) const

@@ -196,6 +196,7 @@ void ColorTexture::Save(const std::string& t_Filename) const { return; }
 texture_t GetTexture(const std::string& t_Name) { return s_TextureIDToTexture[s_TexturePathToID[t_Name]]; }
 texture_t GetTexture(uint32_t t_ID) { return s_TextureIDToTexture[t_ID]; }
 
-texture_t GetDefaultTexture() { return MipmapTexture::New(BUILTINS_DIR + "untextured.png", 4, true, true); }
+texture_t GetDefaultTexture() { return ImageTexture::New(BUILTINS_DIR + "untextured.png", true, true); }
+texture_t GetDefaultSkyboxTexture() { return ImageTexture::New(BUILTINS_DIR + "skybox.png", false, false); }
 
 } // namespace core

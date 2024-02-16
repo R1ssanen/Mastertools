@@ -12,6 +12,7 @@
 #include "vertex.hpp"
 
 #include "render_tile.hpp"
+#include "emitter.hpp"
 
 namespace core
 {
@@ -28,7 +29,7 @@ void App::Run()
 
     std::vector<RenderTile> RenderTiles;
     {
-        int Horizontal = 4, Vertical = 3;
+        int Horizontal = 3, Vertical = 3;
         int TileWidth = m_Context.GetWidth() / Horizontal, TileHeight = m_Context.GetHeight() / Vertical;
 
         for (int H = 0; H < Vertical; H++) {
@@ -41,10 +42,13 @@ void App::Run()
         }
     }
 
+    //emitter_t Emitter = DiskEmitter::New(m_ActiveScene.GetObjects()[0].GetMeshes()[0], 1000, glm::vec3(0.f), 0.25f);
+
     while (m_Running)
     {
         SDL_PumpEvents();
         m_ActiveScene.Update(m_Timer.GetTimeElapsed() * 0.001f);
+        //Emitter->Update(m_Timer.GetTimeElapsed());
 
         glm::mat4 MatView = m_ActiveScene.GetCamera().GetMatView();
         glm::mat4 MatProjection =
@@ -60,8 +64,6 @@ void App::Run()
             for (const mesh_t& Mesh : Object.GetMeshes())
             {
                 texture_t Texture = GetTexture(Mesh->GetTextureID());
-                shader_t Shader = Texture->IsTransparent() ? TransparentSTD : OpaqueSTD;
-
                 vertex_vector_t TransVertices = Mesh->GetVertices();
 
                 for (Vertex& Vertex : TransVertices)
@@ -74,9 +76,12 @@ void App::Run()
                         glm::vec4 LightDirection = glm::normalize(glm::vec4(Light.GetPos(), 1.f) - Vertex.m_Pos);
                         float Lambert = glm::dot(Vertex.m_Normal, LightDirection);
 
-                        Vertex.m_Light += Light.GetLighting(Vertex) * ((Lambert + 1.f) * 0.5f);
+                        float Contribution = Light.GetLighting(Vertex) * ((Lambert + 1.f) * 0.5f);
+                        Vertex.m_Light += Contribution;
+                        Vertex.m_LightColor += Light.GetColor() * Contribution;
                     }
 
+                    Vertex.m_LightColor = glm::clamp(Vertex.m_LightColor / static_cast<float>(m_ActiveScene.GetLights().size()), glm::vec3(0.f), glm::vec3(1.f));
                     Vertex.m_Pos = MatViewProjection * Vertex.m_Pos;
                 }
 
@@ -108,51 +113,113 @@ void App::Run()
                             Vertex.m_Pos.y = (Vertex.m_Pos.y + 1.f) * 0.5f * m_Context.GetHeight();
                         }
 
-                        for (RenderTile& Tile : RenderTiles) {
+                        /*for (RenderTile& Tile : RenderTiles) {
                             if (!Tile.IntersectsTriangle(Tri)) {continue;}
 
-                            Tile.AddToQueue(DrawTri{Tri, Texture->GetID()});
-                        }
+                            else if (Texture->IsTransparent()) {
+                                Tile.QueueTransparent(DrawTri{.m_Tri = Tri, .m_Shader = TransparentSTD, .m_TextureID = Texture->GetID(), .m_Alpha = 1.f});
+                            }
+                            
+                            else {
+                                Tile.QueueOpaque(DrawTri{.m_Tri = Tri, .m_Shader = OpaqueSTD, .m_TextureID = Texture->GetID(), .m_Alpha = 1.f});
+                            }
+                        }*/
 
-                        /*if (GetWireframe())
+                        if (Texture->IsTransparent())
                         {
-                            DrawWireframe(m_Context, {Tri[0].m_Pos, Tri[1].m_Pos, Tri[2].m_Pos});
-                        }
+                            if (GetWireframe()) {
+                                DrawWireframe(m_Context, Tri, 40, 90, 255);
+                            }
 
-                        else if (Texture->IsTransparent())
-                        {
-                            TransparentTris.push_back(DrawTri{Tri, Texture->GetID()});
+                            TransparentTris.push_back(
+                                DrawTri{.m_Tri = Tri, .m_Shader = TransparentSTD, .m_TextureID = Texture->GetID(), .m_Alpha = 1.f}
+                            );
                         }
 
                         else
                         {
-                            RenderTriBary(m_Context, Tri, Texture, m_ActiveScene.GetCamera().GetInverseFar(),
-                                          OpaqueSTD);
-                        }*/
+                            if (GetWireframe()) {
+                                DrawWireframe(m_Context, Tri, 255, 255, 60);
+                            }
+
+                            RenderTriBary(m_Context.GetBuffer(), DrawTri{.m_Tri = Tri, .m_Shader = OpaqueSTD, .m_TextureID = Texture->GetID(), .m_Alpha = 1.f},
+                                          m_ActiveScene.GetCamera().GetInverseFar());
+                        }
                     }
                 }
             }
         }
 
-        #pragma omp parallel for schedule(static, 1)
-        for (RenderTile& Tile : RenderTiles) {
-            Tile.Render(m_Context, m_ActiveScene);
-            Tile.ClearQueue();
-        }
-
         if (m_ActiveScene.GetSkybox().has_value())
         {
-            m_ActiveScene.GetSkybox().value().Render(m_ActiveScene.GetCamera(), m_Context);
+            m_ActiveScene.GetSkybox().value().Render(m_ActiveScene.GetCamera(), m_Context.GetBuffer());
         }
 
-
-        /*
-        std::sort(TransparentTris.begin(), TransparentTris.end(), DrawTri::FarToClose);
-        for (const DrawTri& Tri : TransparentTris)
+/*
         {
-            RenderTriBary(m_Context, Tri.m_Tri, GetTexture(Tri.m_TextureID), m_ActiveScene.GetCamera().GetInverseFar(),
-                          TransparentSTD);
-        }*/
+            texture_t Texture = GetTexture(Emitter->GetMesh()->GetTextureID());
+
+            for (const Particle& Particle : Emitter->GetParticles()) {
+                vertex_vector_t TransVertices = Emitter->GetMesh()->GetVertices();
+                
+                glm::mat4 MatModel = glm::translate(glm::mat4(1.f), Particle.GetPos()) *
+                                     glm::orientate4(Particle.GetAngle()) *
+                                     glm::scale(glm::mat4(1.f), Particle.GetScale());
+
+                for (Vertex& Vertex : TransVertices)
+                {
+                    Vertex.m_Pos = MatModel * Vertex.m_Pos;
+                    Vertex.m_Normal = glm::normalize(glm::orientate4(Particle.GetAngle()) * Vertex.m_Normal);
+
+                    for (const PointLight& Light : m_ActiveScene.GetLights())
+                    {
+                        glm::vec4 LightDirection = glm::normalize(glm::vec4(Light.GetPos(), 1.f) - Vertex.m_Pos);
+                        float Lambert = glm::dot(Vertex.m_Normal, LightDirection);
+
+                        Vertex.m_Light += Light.GetLighting(Vertex) * ((Lambert + 1.f) * 0.5f);
+                    }
+
+                    Vertex.m_Pos = MatViewProjection * Vertex.m_Pos;
+                }
+
+                for (size_t ID = 0; ID < Emitter->GetMesh()->GetIndices().size(); ID += 3)
+                {
+                    triangle_t UnclippedTri = {TransVertices[ID], TransVertices[ID + 1], TransVertices[ID + 2]};
+
+                    for (triangle_t& Tri :
+                            FrustumClipTriangle(UnclippedTri, m_ActiveScene.GetCamera().GetClipFrustum()))
+                    {
+                        for (Vertex& Vertex : Tri)
+                        {
+                            Vertex.m_Pos.w = 1.f / Vertex.m_Pos.w;
+                            Vertex.m_Pos.x *= Vertex.m_Pos.w;
+                            Vertex.m_Pos.y *= Vertex.m_Pos.w;
+                            Vertex.m_Pos.z *= Vertex.m_Pos.w;
+
+                            Vertex.m_Pos.x = (Vertex.m_Pos.x + 1.f) * 0.5f * m_Context.GetWidth();
+                            Vertex.m_Pos.y = (Vertex.m_Pos.y + 1.f) * 0.5f * m_Context.GetHeight();
+                            Vertex.m_UV *= Vertex.m_Pos.w;
+                        }
+
+                        if (GetWireframe()) {
+                            DrawWireframe(m_Context, Tri, 40, 90, 255);
+                        }
+
+                        TransparentTris.push_back(
+                            DrawTri{.m_Tri = Tri, .m_Shader = ParticleSTD, .m_TextureID = Texture->GetID(),
+                                    .m_Alpha = glm::smoothstep(0.f, 1.f, float(Particle.GetLifetime()) / Particle.GetStartLifetime())}
+                        );
+                    }
+                }
+            }
+
+        }
+*/
+
+        std::sort(TransparentTris.begin(), TransparentTris.end(), DrawTri::FarToClose);
+        for (const DrawTri& DrawTri : TransparentTris) {
+            RenderTriBary(m_Context.GetBuffer(), DrawTri, m_ActiveScene.GetCamera().GetInverseFar());
+        }
 
         m_Context.Update();
         m_Timer.Tick();

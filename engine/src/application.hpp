@@ -48,7 +48,7 @@ class App
     inline static App* m_Instance{nullptr};
     bool m_Running{true};
     Timer m_Timer = Timer::New();
-    Context m_Context = CreateContext();
+    Context m_Context = Context::New();
 
     Scene m_ActiveScene = Scene::New(BUILTINS_DIR + "default.mgls");
 };

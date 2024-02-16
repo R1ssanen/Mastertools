@@ -17,6 +17,8 @@ inline glm::ivec2 JsonArrayToIVec2(const nlohmann::json& t_Array)
 
 } // namespace
 
+#define BLOOM_ENABLED false
+
 namespace core
 {
 
@@ -25,6 +27,7 @@ namespace core
 const glm::ivec2& GetSettingViewResolution();
 const glm::ivec2& GetSettingRenderResolution();
 const glm::vec2& GetSettingSensitivity();
+glm::vec2 GetResolutionRatio();
 
 const int& GetSettingRefreshRate();
 const bool& GetSettingUseVSync();

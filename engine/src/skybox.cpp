@@ -15,14 +15,16 @@
 namespace core
 {
 
-Skybox Skybox::New(const mesh_t& t_Mesh) { return Skybox(_M{.Mesh = t_Mesh, .Timer = Timer::New(), .State = 0.f}); }
+Skybox Skybox::New(uint32_t t_TextureID) {
+    return Skybox(_M{.Mesh = LoadAsset(BUILTINS_DIR + "skybox.obj", t_TextureID), .Timer = Timer::New(), .State = 0.f});
+}
 
-triangle_vector_t Skybox::Transform(const Camera& t_Camera, const Context& t_Context) const
+triangle_vector_t Skybox::Transform(const Camera& t_Camera, buffer_t t_Buffer) const
 {
     std::vector<Vertex> TransVertices{m.Mesh->GetVertices()};
     triangle_vector_t TrianglesOut;
 
-    glm::mat4 MatViewProjection{t_Camera.GetMatProjection(t_Context.GetWidth(), t_Context.GetHeight()) *
+    glm::mat4 MatViewProjection{t_Camera.GetMatProjection(t_Buffer->GetWidth(), t_Buffer->GetHeight()) *
                                 t_Camera.GetMatView()};
 
     for (Vertex& Vertex : TransVertices)
@@ -46,8 +48,8 @@ triangle_vector_t Skybox::Transform(const Camera& t_Camera, const Context& t_Con
                 Vertex.m_Pos.z *= Vertex.m_Pos.w;
                 Vertex.m_UV *= Vertex.m_Pos.w;
 
-                Vertex.m_Pos.x = (Vertex.m_Pos.x + 1.f) * 0.5f * t_Context.GetWidth();
-                Vertex.m_Pos.y = (Vertex.m_Pos.y + 1.f) * 0.5f * t_Context.GetHeight();
+                Vertex.m_Pos.x = (Vertex.m_Pos.x + 1.f) * 0.5f * t_Buffer->GetWidth();
+                Vertex.m_Pos.y = (Vertex.m_Pos.y + 1.f) * 0.5f * t_Buffer->GetHeight();
             }
 
             TrianglesOut.push_back(Tri);
@@ -57,13 +59,14 @@ triangle_vector_t Skybox::Transform(const Camera& t_Camera, const Context& t_Con
     return TrianglesOut;
 }
 
-void Skybox::Render(const Camera& t_Camera, Context& t_Context) const
+void Skybox::Render(const Camera& t_Camera, buffer_t t_Buffer) const
 {
-    const triangle_vector_t RenderTris = Transform(t_Camera, t_Context);
+    const triangle_vector_t RenderTris = Transform(t_Camera, t_Buffer);
 
+    #pragma omp parallel for
     for (const triangle_t& Tri : RenderTris)
     {
-        RenderTri(t_Context, Tri);
+        RenderTri(t_Buffer, Tri);
     }
 }
 
@@ -72,34 +75,30 @@ void Skybox::Update() {
     m.State = (std::cos(m.Timer.GetTimeElapsed() * 0.001f) + 1.f) * 0.5f;
 }
 
-void Skybox::RenderTri(Context& t_Context, const triangle_t& t_Tri) const
+void Skybox::RenderTri(buffer_t t_Buffer, const triangle_t& t_Tri) const
 {
-    const auto [a, b, c] = t_Tri;
+    auto [Min, Max] = GetBoundingBox(t_Tri);
 
-    auto [min_x, max_x] = std::minmax({a.m_Pos.x, b.m_Pos.x, c.m_Pos.x});
-    auto [min_y, max_y] = std::minmax({a.m_Pos.y, b.m_Pos.y, c.m_Pos.y});
+    Min = glm::clamp(Min, glm::vec2(0.f), glm::vec2(t_Buffer->GetWidth() - 1, t_Buffer->GetHeight() - 1));
+    Max = glm::clamp(Max, glm::vec2(0.f), glm::vec2(t_Buffer->GetWidth() - 1, t_Buffer->GetHeight() - 1));
 
-    float full = 1.f / Edge(a.m_Pos.x, a.m_Pos.y, b.m_Pos.x, b.m_Pos.y, c.m_Pos.x, c.m_Pos.y);
-
-    min_x = glm::clamp<int>(min_x, 0, t_Context.GetWidth() - 1);
-    max_x = glm::clamp<int>(max_x, 0, t_Context.GetWidth() - 1);
-    min_y = glm::clamp<int>(min_y, 0, t_Context.GetHeight() - 1);
-    max_y = glm::clamp<int>(max_y, 0, t_Context.GetHeight() - 1);
-
-    if ((max_x - min_x) * (max_y - min_y) == 0)
+    if ((Max.x - Max.x) * (Max.y - Min.y) == 0)
     {
         return;
     }
 
-    for (int y = min_y; y <= max_y; y++)
+    auto [a, b, c] = t_Tri;
+    float full = 1.f / Edge(a.m_Pos.x, a.m_Pos.y, b.m_Pos.x, b.m_Pos.y, c.m_Pos.x, c.m_Pos.y);
+
+    for (int y = Min.y; y <= Max.y; y++)
     {
-        int row = y * t_Context.GetWidth();
+        int Row = y * t_Buffer->GetWidth();
 
         bool Outside{true};
 
-        for (int x = min_x; x <= max_x; x++)
+        for (int x = Min.x; x <= Min.x; x++)
         {
-            if (t_Context.DepthBuffer[row + x] != INFINITY)
+            if (t_Buffer->GetDepth(Row + x) != INFINITY)
             {
                 continue;
             }
@@ -117,7 +116,7 @@ void Skybox::RenderTri(Context& t_Context, const triangle_t& t_Tri) const
                 float u = std::fabs(bc0 * a.m_UV.x + bc1 * b.m_UV.x + bc2 * c.m_UV.x) * w;
                 float v = std::fabs(bc0 * a.m_UV.y + bc1 * b.m_UV.y + bc2 * c.m_UV.y) * w;
 
-                t_Context.ColorBuffer[row + x] = GetTexture(m.Mesh->GetTextureID())->Sample(glm::vec2(u, v), 0.f);
+                t_Buffer->SetPixel(Row + x, GetTexture(m.Mesh->GetTextureID())->Sample(glm::vec2(u, v), 0.f));
             }
 
             else
@@ -198,7 +197,5 @@ void Skybox::RenderTri(Context& t_Context, const Tri& t_Tri) {
   }
 }
 */
-
-Skybox GetDefaultSkybox() { return Skybox::New(LoadAsset(BUILTINS_DIR, "skybox.obj", false, false)[0]); }
 
 } // namespace core

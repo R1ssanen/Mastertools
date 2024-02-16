@@ -22,29 +22,48 @@ namespace core {
                       || Max.y < m.Min.y);
             }
 
-            void AddToQueue(const DrawTri& t_DrawTri) {
-                m.RenderQueue.push_back(t_DrawTri);
+            void QueueOpaque(const DrawTri& t_DrawTri) {
+                m.OpaqueQueue.push_back(t_DrawTri);
             }
 
-            void ClearQueue() {
-                m.RenderQueue.clear();
+            void QueueTransparent(const DrawTri& t_DrawTri) {
+                m.TransparentQueue.push_back(t_DrawTri);
             }
-            
-            const std::vector<DrawTri> GetRenderQueue() const {return m.RenderQueue;}
-            const glm::vec2& GetMin() const {return m.Min;}
-            const glm::vec2& GetMax() const {return m.Max;}
 
-            void Render(Context& t_Context, const Scene& t_Scene) const {
-                for (const DrawTri& DrawTri : m.RenderQueue) {
-                    if (GetVisualizeTiles()) {
-                        RenderTriBary(t_Context, DrawTri.m_Tri, m.ColorTextureID, t_Scene.GetCamera().GetInverseFar(), OpaqueSTD, m.Min, m.Max);
+            void ClearOpaqueQueue() {
+                m.OpaqueQueue.clear();
+            }
+
+            void ClearTransparentQueue() {
+                m.TransparentQueue.clear();
+            }
+
+            /*std::future<void> RenderOpaque(Context& t_Context, const Scene& t_Scene) {
+
+                //std::sort(m.OpaqueQueue.begin(), m.OpaqueQueue.end(), DrawTri::CloseToFar);
+
+                auto Task = [this] (Context& t_Context, const Scene& t_Scene) mutable {
+                    for (DrawTri& DrawTri : this->m.OpaqueQueue) {
+                        uint32_t TextureID = GetVisualizeTiles() ? m.ColorTextureID : DrawTri.m_TextureID;
+                        RenderTriBary(t_Context, DrawTri, t_Scene.GetCamera().GetInverseFar(), m.Min, m.Max);
                     }
 
-                    else {
-                        RenderTriBary(t_Context, DrawTri.m_Tri, DrawTri.m_TextureID, t_Scene.GetCamera().GetInverseFar(), OpaqueSTD, m.Min, m.Max);
-                    }
+                    m.OpaqueQueue.clear();
+                };
+
+                return std::async(std::launch::async, Task, std::ref(t_Context), std::cref(t_Scene));
+            }
+
+            void RenderTransparent(Context& t_Context, const Scene& t_Scene) {
+                
+                std::sort(m.TransparentQueue.begin(), m.TransparentQueue.end(), DrawTri::FarToClose);
+
+                for (const DrawTri& DrawTri : m.TransparentQueue) {
+                    
+                    uint32_t TextureID = GetVisualizeTiles() ? m.ColorTextureID : DrawTri.m_TextureID;
+                    RenderTriBary(t_Context, DrawTri, t_Scene.GetCamera().GetInverseFar(), m.Min, m.Max);
                 }
-            }
+            }*/
 
             static RenderTile New(int t_MinX, int t_MinY, int t_MaxX, int t_MaxY) {
                 return RenderTile(
@@ -58,7 +77,7 @@ namespace core {
 
         private:
             struct _M {
-                std::vector<DrawTri> RenderQueue;
+                std::vector<DrawTri> OpaqueQueue, TransparentQueue;
                 glm::vec2 Min, Max;
                 uint32_t ColorTextureID;
             } m;

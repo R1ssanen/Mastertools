@@ -26,10 +26,12 @@ namespace core
 const glm::ivec2& GetSettingViewResolution() { return s_ViewResolution; }
 const glm::ivec2& GetSettingRenderResolution() { return s_RenderResolution; }
 const glm::vec2& GetSettingSensitivity() { return s_Sensitivity; }
+glm::vec2 GetResolutionRatio() { return s_ViewResolution / s_RenderResolution; }
 
 const int& GetSettingRefreshRate() { return s_RefreshRate; }
 const bool& GetSettingUseVSync() { return s_UseVSync; }
 const std::string& GetAppName() { return s_AppName; }
+
 
 const float& GetSettingAmbientIntensity() { return s_AmbientIntensity; }
 
@@ -87,7 +89,7 @@ const bool& GetWireframe() { return s_Wireframe; }
 void SetWireframe(const bool& t_Value) { s_Wireframe = t_Value; }
 const bool& GetShowMipmaps() { return s_ShowMipmaps; }
 void SetShowMipmaps(const bool& t_Value) { s_ShowMipmaps = t_Value; }
-const bool& GetVisualizeTiles() {return s_VisualizeTiles;}
-void SetVisualizeTiles(const bool& t_Value) {s_VisualizeTiles = t_Value;}
+const bool& GetVisualizeTiles() { return s_VisualizeTiles; }
+void SetVisualizeTiles(const bool& t_Value) { s_VisualizeTiles = t_Value; }
 
 } // namespace core

@@ -11,6 +11,11 @@ glm::vec3 JsonArrayToVec3(const nlohmann::json& t_Array)
 {
     return glm::vec3(t_Array[0].get<float>(), t_Array[1].get<float>(), t_Array[2].get<float>());
 }
+
+glm::vec4 JsonArrayToVec4(const nlohmann::json& t_Array)
+{
+    return glm::vec4(t_Array[0].get<float>(), t_Array[1].get<float>(), t_Array[2].get<float>(), t_Array[3].get<float>());
+}
 } // namespace
 
 namespace core
@@ -65,47 +70,57 @@ Scene Scene::New(const std::string& t_Path)
             for (const auto& Light : Element["point"])
             {
                 glm::vec3 LightPos = Light.contains("pos") ? JsonArrayToVec3(Light["pos"]) : glm::vec3(0.f);
+                glm::vec3 LightColor = Light.contains("color") ? JsonArrayToVec3(Light["color"]) : glm::vec3(1.f);
                 float LightIntensity = Light.contains("intensity") ? Light["intensity"].get<float>() : 1.f;
 
-                Lights.push_back(PointLight::New(LightPos, LightIntensity));
+                Lights.push_back(PointLight::New(LightPos, LightColor, LightIntensity));
             }
         }
 
         else if (Key == "skybox")
         {
-            if (Element.contains("default") && Element["default"].get<bool>())
-            {
-                Skybox = GetDefaultSkybox();
-            }
+            texture_t SkyboxTexture = Element.get<std::string>() == "default" ?
+                GetDefaultSkyboxTexture() : ImageTexture::New(Element.get<std::string>());
 
-            else {
-                Skybox = Skybox::New(LoadAsset(Element["directory"].get<std::string>(), Element["file"].get<std::string>(),
-                                false, false)[0]);
-            }
+            Skybox = Skybox::New(SkyboxTexture->GetID());
         }
 
         else if (Key == "objects")
         {
             for (const auto& Object : Element)
             {
-                mesh_vector_t MeshesOut;
+                mesh_vector_t LoadedMeshes;
+                const bool IsMipmapped = Object.contains("mipmapped") ? Object["mipmapped"].get<bool>() : true;
+                const bool IsDoublesided = Object.contains("doublesided") ? Object["doublesided"].get<bool>() : false;
+                uint8_t Miplevels = Object.contains("miplevels") ? Object["miplevels"].get<uint8_t>() : 4;
 
-                for (const auto& Asset : Object["assets"])
-                {
-                    const mesh_vector_t LoadedMeshes{
-                        LoadAsset(Asset["directory"].get<std::string>(), Asset["file"].get<std::string>(),
-                                  Asset.contains("mipmapped") ? Asset["mipmapped"].get<bool>() : true,
-                                  Asset.contains("doublesided") ? Asset["doublesided"].get<bool>() : false)};
+                if (Object.contains("texture") || Object.contains("color")) {
+                    texture_t Texture;
 
-                    MeshesOut.insert(MeshesOut.end(), LoadedMeshes.begin(), LoadedMeshes.end());
+                    if (Object.contains("texture")) {
+                        const bool IsTransparent = Object.contains("transparent") ? Object["transparent"].get<bool>() : false;
+                        Texture = IsMipmapped ? MipmapTexture::New(Object["texture"].get<std::string>(), Miplevels, IsTransparent, IsDoublesided) : 
+                                                ImageTexture::New(Object["texture"].get<std::string>(), IsTransparent, IsDoublesided);
+                    }
+
+                    else {
+                        glm::vec4 Color = JsonArrayToVec4(Object["color"]) * 255.f;
+                        const bool IsTransparent = Color.w != 1.f;
+                        Texture = ColorTexture::New(t_Path, ToUint32(Color), IsTransparent, IsDoublesided);
+                    }
+
+                    LoadedMeshes.push_back(LoadAsset(Object["path"].get<std::string>(), Texture->GetID()));                                                       
+                }
+
+                else {
+                    LoadedMeshes = LoadAsset(Object["path"].get<std::filesystem::path>(), IsMipmapped, IsDoublesided);
                 }
 
                 glm::vec3 ObjectPos = Object.contains("pos") ? JsonArrayToVec3(Object["pos"]) : glm::vec3(0.f);
-                glm::vec3 ObjectAngle =
-                    Object.contains("angle") ? glm::radians(JsonArrayToVec3(Object["angle"])) : glm::vec3(0.f);
+                glm::vec3 ObjectAngle = Object.contains("angle") ? glm::radians(JsonArrayToVec3(Object["angle"])) : glm::vec3(0.f);
                 glm::vec3 ObjectScale = Object.contains("scale") ? JsonArrayToVec3(Object["scale"]) : glm::vec3(1.f);
 
-                Objects.push_back(Object::New(MeshesOut, ObjectPos, ObjectAngle, ObjectScale));
+                Objects.push_back(Object::New(LoadedMeshes, ObjectPos, ObjectAngle, ObjectScale));
             }
         }
 
