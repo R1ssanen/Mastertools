@@ -1,6 +1,6 @@
 #include "settings.hpp"
 
-#include "srpch.hpp"
+#include "mtpch.hpp"
 
 namespace
 {
@@ -8,13 +8,13 @@ namespace
 glm::ivec2 s_ViewResolution{1440, 900}, s_RenderResolution{720, 450};
 glm::vec2 s_Sensitivity{1000.f, 1000.f};
 
-int s_RefreshRate = 70;
-bool s_UseVSync = false;
+core::i32   s_RefreshRate = 70;
+core::b8    s_UseVSync    = false;
 std::string s_AppName;
 
-float s_AmbientIntensity = 0.1f;
+core::f32   s_AmbientIntensity = 0.1f;
 
-bool s_Wireframe = false, s_ShowMipmaps = false, s_VisualizeTiles = false;
+core::b8    s_Wireframe = false, s_ShowMipmaps = false, s_VisualizeTiles = false;
 
 } // namespace
 
@@ -27,18 +27,19 @@ const glm::ivec2& GetSettingViewResolution() { return s_ViewResolution; }
 const glm::ivec2& GetSettingRenderResolution() { return s_RenderResolution; }
 const glm::vec2& GetSettingSensitivity() { return s_Sensitivity; }
 glm::vec2 GetResolutionRatio() { return s_ViewResolution / s_RenderResolution; }
+f32 GetRenderAspectRatio() { return static_cast<f32>(s_RenderResolution.x) / s_RenderResolution.y; }
 
-const int& GetSettingRefreshRate() { return s_RefreshRate; }
-const bool& GetSettingUseVSync() { return s_UseVSync; }
+const i32& GetSettingRefreshRate() { return s_RefreshRate; }
+const b8& GetSettingUseVSync() { return s_UseVSync; }
 const std::string& GetAppName() { return s_AppName; }
 
 
-const float& GetSettingAmbientIntensity() { return s_AmbientIntensity; }
+const f32& GetSettingAmbientIntensity() { return s_AmbientIntensity; }
 
-void LoadSettings(const std::string& t_Path)
+void LoadSettings(const std::string& Path)
 {
     using json = nlohmann::json;
-    std::ifstream File(t_Path);
+    std::ifstream File(Path);
     const json SettingsData{json::parse(File)};
 
     for (const auto& [Key, Element] : SettingsData[0].items())
@@ -56,12 +57,12 @@ void LoadSettings(const std::string& t_Path)
 
         else if (Key == "refresh")
         {
-            s_RefreshRate = Element.get<int>();
+            s_RefreshRate = Element.get<i32>();
         }
 
         else if (Key == "vsync")
         {
-            s_RefreshRate = Element.get<bool>();
+            s_RefreshRate = Element.get<b8>();
         }
 
         else if (Key == "sensitivity")
@@ -71,7 +72,7 @@ void LoadSettings(const std::string& t_Path)
 
         else if (Key == "ambient")
         {
-            s_AmbientIntensity = Element.get<float>();
+            s_AmbientIntensity = Element.get<f32>();
         }
 
         else
@@ -85,11 +86,11 @@ void LoadSettings(const std::string& t_Path)
 
 // states
 
-const bool& GetWireframe() { return s_Wireframe; }
-void SetWireframe(const bool& t_Value) { s_Wireframe = t_Value; }
-const bool& GetShowMipmaps() { return s_ShowMipmaps; }
-void SetShowMipmaps(const bool& t_Value) { s_ShowMipmaps = t_Value; }
-const bool& GetVisualizeTiles() { return s_VisualizeTiles; }
-void SetVisualizeTiles(const bool& t_Value) { s_VisualizeTiles = t_Value; }
+const b8& GetWireframe() { return s_Wireframe; }
+void SetWireframe(const b8& Value) { s_Wireframe = Value; }
+const b8& GetShowMipmaps() { return s_ShowMipmaps; }
+void SetShowMipmaps(const b8& Value) { s_ShowMipmaps = Value; }
+const b8& GetVisualizeTiles() { return s_VisualizeTiles; }
+void SetVisualizeTiles(const b8& Value) { s_VisualizeTiles = Value; }
 
 } // namespace core

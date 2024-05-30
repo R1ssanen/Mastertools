@@ -2,13 +2,13 @@
 
 #include "color.hpp"
 #include "settings.hpp"
-#include "srpch.hpp"
+#include "mtpch.hpp"
 #include "vertex.hpp"
 #include "buffer.hpp"
 
 namespace {
-    constexpr uint8_t BloomIntensity = 200;
-    constexpr int BloomDownsamplePasses = 4;
+    constexpr core::u8 BloomIntensity        = 200;
+    constexpr core::i32 BloomDownsamplePasses = 4;
 }
 
 namespace core
@@ -16,19 +16,19 @@ namespace core
 
 void Context::Update()
 {
-    SDL_UpdateTexture(RenderTexture, nullptr, m.Buffer->GetColorBuffer(), GetWidth() * sizeof(uint32_t));
     SDL_SetRenderTarget(Renderer, nullptr);
+    SDL_UpdateTexture(RenderTexture, nullptr, m.Buffer->GetColorBuffer(), m.Buffer->GetWidth() * sizeof(u32));
     SDL_RenderCopy(Renderer, RenderTexture, nullptr, &m.Viewport);
 
 #if BLOOM_ENABLED
     {  // bloom pass 
         SDL_Texture* LuminosityTexture;
 
-        SDL_Surface* LuminosityMask = SDL_CreateRGBSurfaceWithFormat(0, GetWidth(), GetHeight(), sizeof(uint32_t), SDL_PIXELFORMAT_RGBA8888);
-        uint32_t* LuminosityPixels = static_cast<uint32_t*>(LuminosityMask->pixels);
+        SDL_Surface* LuminosityMask = SDL_CreateRGBSurfaceWithFormat(0, GetWidth(), GetHeight(), sizeof(u32), SDL_PIXELFORMAT_RGBA8888);
+        u32* LuminosityPixels = static_cast<u32*>(LuminosityMask->pixels);
         std::fill_n(LuminosityPixels, GetWidth() * GetHeight(), 0);
 
-        for (size_t i = 0; i < static_cast<size_t>(GetWidth() * GetHeight()); i++) {
+        for (u64 i = 0; i < static_cast<u64>(GetWidth() * GetHeight()); i++) {
             glm::vec3 Pixel = UnpackToVec4(ColorBuffer[i]) * INVERSE_MAX_UINT8;
             if (Luminosity(Pixel) >= 0.85f) {
                 LuminosityPixels[i] = ColorBuffer[i];
@@ -40,7 +40,7 @@ void Context::Update()
   
         SDL_Texture* BlurTexture = SDL_CreateTexture(Renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, GetWidth(), GetHeight());
         
-        for (int i = 1; i < BloomDownsamplePasses; i++) {
+        for (i32 i = 1; i < BloomDownsamplePasses; i++) {
             SDL_Texture* LayerTexture = SDL_CreateTexture(Renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
                                                           GetWidth() / std::pow(2, i), GetHeight() / std::pow(2, i));
             SDL_SetRenderTarget(Renderer, LayerTexture);
@@ -65,11 +65,17 @@ void Context::Update()
     }
 #endif
 
+#ifndef NDEBUG
     SDL_RenderCopy(Renderer, DebugTexture, nullptr, &m.Viewport);
+#endif
 
     SDL_RenderPresent(Renderer);
+
+#ifndef NDEBUG
     SDL_SetRenderTarget(Renderer, DebugTexture);
     SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 0);
+#endif
+
     SDL_RenderClear(Renderer);
 }
 
@@ -84,6 +90,7 @@ void Context::Delete()
     SDL_DestroyWindow(Window);
     SDL_DestroyRenderer(Renderer);
     SDL_DestroyTexture(RenderTexture);
+    SDL_DestroyTexture(DebugTexture);
 }
 
 Context Context::New()
@@ -106,8 +113,8 @@ Context Context::New()
         }
     );
 
-    Context.Window = SDL_CreateWindow(("Mastertools Softengine" + GetAppName()).c_str(), SDL_WINDOWPOS_CENTERED,
-                                      SDL_WINDOWPOS_CENTERED, ViewResolution.x, ViewResolution.y, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    Context.Window = SDL_CreateWindow(("Mastertools Softengine" + GetAppName()).c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                       ViewResolution.x, ViewResolution.y, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
     if (!Context.Window)
     {
@@ -123,6 +130,7 @@ Context Context::New()
     
     Context.DebugTexture = SDL_CreateTexture(Context.Renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
                                               ViewResolution.x, ViewResolution.y);
+
     SDL_SetTextureBlendMode(Context.DebugTexture, SDL_BLENDMODE_ADD);
     SDL_SetRenderDrawBlendMode(Context.Renderer, SDL_BLENDMODE_BLEND);
 

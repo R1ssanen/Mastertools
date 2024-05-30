@@ -2,71 +2,148 @@
 
 #include "color.hpp"
 #include "context.hpp"
-#include "srpch.hpp"
+#include "mtpch.hpp"
 #include "texture.hpp"
 #include "buffer.hpp"
 
 namespace core
 {
 
-using shader_t = std::function<void(buffer_t, const texture_t&, const glm::vec4&, const glm::vec2&, float, void*)>;
+/*
+struct Shader {
+    virtual ~Shader() = default;
+    virtual void operator() (buffer_t, texture_t, const glm::vec4&, const glm::vec2&, f32, u32) const = 0;
+};
 
-inline void OpaqueSTD(buffer_t t_Buffer, const texture_t& t_Texture, const glm::vec4& t_Pos,
-                      const glm::vec2& t_UV, float t_Light, void* t_ShaderData = nullptr)
-{
-    uint32_t Pixel = t_Texture->Sample(t_UV, t_Pos.z);
+using shader_t = std::unique_ptr<Shader>;
 
-    uint32_t LightColor = *static_cast<uint32_t*>(t_ShaderData);
+struct Opaque : public Shader {
+    void operator() (buffer_t Buffer, texture_t Texture, const glm::vec4& Pos, const glm::vec2& UV, f32 Light, u32 LightColor) const override {
 
-    unsigned Loc = static_cast<unsigned>(t_Pos.y * t_Buffer->GetWidth() + t_Pos.x);
-    t_Buffer->SetPixel(Loc, BlendUint32(Pixel, LightColor, t_Light));
-    t_Buffer->SetDepth(Loc, t_Pos.z);
-}
+        u32 Pixel = Texture->Sample(UV, Pos.z);
+        u32 Loc = static_cast<u32>(Pos.y * Buffer->GetWidth() + Pos.x);
 
-inline void TransparentSTD(buffer_t t_Buffer, const texture_t& t_Texture, const glm::vec4& t_Pos,
-                           const glm::vec2& t_UV, float t_Light, void* t_ShaderData = nullptr)
-{
-    uint32_t Pixel = t_Texture->Sample(t_UV, t_Pos.z);
-    uint8_t Alpha = Get(Pixel, Channel::ALPHA);
+        Buffer->SetPixel(Loc, BlendUint32(Pixel, LightColor, Light));
+        Buffer->SetDepth(Loc, Pos.z);
+    }
 
-    unsigned Loc = static_cast<unsigned>(t_Pos.y * t_Buffer->GetWidth() + t_Pos.x);
+    static shader_t New() { return std::make_unique<Opaque>(); }
+};
 
-    switch (Alpha)
+struct Transparent : public Shader {
+    void operator() (buffer_t Buffer, texture_t Texture, const glm::vec4& Pos, const glm::vec2& UV, f32 Light, u32 LightColor) const override {
+
+        u32 Pixel = Texture->Sample(UV, Pos.z);
+        u8 Alpha = Get(Pixel, Channel::ALPHA);
+        u32 Loc = static_cast<u32>(Pos.y * Buffer->GetWidth() + Pos.x);
+
+        switch (Alpha)
+        {
+        case 0:
+            return;
+
+        case 255:
+            Buffer->SetPixel(Loc, BlendUint32(Pixel, LightColor, Light));
+            Buffer->SetDepth(Loc, Pos.z);
+            return;
+
+        default:
+            Buffer->SetPixel(Loc, BlendUint32(BlendUint32(Pixel, LightColor, Light), Buffer->GetPixel(Loc),
+                                                    static_cast<f32>(Alpha * INVERSE_MAX_UINT8)));
+            return;
+        }
+    }
+
+    static shader_t New() { return std::make_unique<Transparent>(); }
+};
+
+struct Transparent : public Shader {
+    void operator() (buffer_t Buffer, texture_t Texture, const glm::vec4& Pos, const glm::vec2& UV, f32 Light, u32 LightColor) const override {
+
+        u32 Pixel = Texture->Sample(UV, Pos.z);
+        u8 Alpha = Get(Pixel, Channel::ALPHA);
+        u32 Loc = static_cast<u32>(Pos.y * Buffer->GetWidth() + Pos.x);
+
+        switch (Alpha)
+        {
+        case 0:
+            return;
+
+        case 255:
+            Buffer->SetPixel(Loc, BlendUint32(Pixel, LightColor, Light));
+            Buffer->SetDepth(Loc, Pos.z);
+            return;
+
+        default:
+            Buffer->SetPixel(Loc, BlendUint32(BlendUint32(Pixel, LightColor, Light), Buffer->GetPixel(Loc),
+                                                    static_cast<f32>(Alpha * INVERSE_MAX_UINT8)));
+            return;
+        }
+    }
+
+    static shader_t New() { return std::make_unique<Transparent>(); }    
+};
+*/
+
+using shader_t = void(*)(buffer_t, texture_t, const glm::vec4&, const glm::vec2&, f32, u32, f32);
+
+inline void  OpaqueSTD(buffer_t Buffer, texture_t Texture, const glm::vec4& Pos,
+                     const glm::vec2& UV, f32 Light, u32 LightColor, f32 Alpha) {
+
+    u32 Pixel = Texture->Sample(UV, Pos.z);
+    u32 Loc = std::clamp(static_cast<i32>(Pos.y * Buffer->GetWidth() + Pos.x), 0, Buffer->GetResolution() - 1);
+
+    Buffer->SetPixel(Loc, BlendUint32(Pixel, LightColor, Light));
+    Buffer->SetDepth(Loc, Pos.z);
+};
+
+inline void  TransparentSTD(buffer_t Buffer, texture_t Texture, const glm::vec4& Pos,
+                     const glm::vec2& UV, f32 Light, u32 LightColor, f32 Alpha) {
+
+    u32 Pixel = Texture->Sample(UV, Pos.z);
+    u8 PixelAlpha = Get(Pixel, Channel::ALPHA) * Alpha;
+    u32 Loc = std::clamp(static_cast<i32>(Pos.y * Buffer->GetWidth() + Pos.x), 0, Buffer->GetResolution() - 1);
+
+    switch (PixelAlpha)
     {
     case 0:
         return;
 
     case 255:
-        t_Buffer->SetPixel(Loc, ModUint32(Pixel, t_Light));
-        t_Buffer->SetDepth(Loc, t_Pos.z);
+        Buffer->SetPixel(Loc, BlendUint32(Pixel, LightColor, Light));
+        Buffer->SetDepth(Loc, Pos.z);
         return;
 
     default:
-        t_Buffer->SetPixel(Loc, BlendUint32(ModUint32(Pixel, t_Light), t_Buffer->GetPixel(Loc),
-                                                 static_cast<float>(Alpha * INVERSE_MAX_UINT8)));
+        Buffer->SetPixel(Loc, BlendUint32(BlendUint32(Pixel, LightColor, Light), Buffer->GetPixel(Loc),
+                                                static_cast<f32>(Alpha * INVERSE_MAX_UINT8)));
         return;
     }
-}
+};
 
-inline void ParticleSTD(buffer_t t_Buffer, const texture_t& t_Texture, const glm::vec4& t_Pos,
-                        const glm::vec2& t_UV, float t_Light, void* t_ShaderData = nullptr)
-{
-    uint32_t Pixel = t_Texture->Sample(t_UV, t_Pos.z);
-    uint8_t Alpha = Get(Pixel, Channel::ALPHA);
+inline void ParticleSTD(buffer_t Buffer, texture_t Texture, const glm::vec4& Pos,
+                     const glm::vec2& UV, f32 Light, u32 LightColor, f32 Alpha) {
 
-    unsigned Loc = static_cast<unsigned>(t_Pos.y * t_Buffer->GetWidth() + t_Pos.x);
-    float ParticleAlpha = *static_cast<float*>(t_ShaderData);
+    u32 Pixel = Texture->Sample(UV, Alpha);
+    u8  PixelAlpha = Get(Pixel, Channel::ALPHA) * Alpha;
+    u32 Loc = std::clamp(static_cast<i32>(Pos.y * Buffer->GetWidth() + Pos.x), 0, Buffer->GetResolution() - 1);
 
-    switch (Alpha)
+    switch (PixelAlpha)
     {
     case 0:
         return;
 
+    case 255:
+        Buffer->SetPixel(Loc, BlendUint32(Pixel, LightColor, Light));
+        Buffer->SetDepth(Loc, Pos.z);
+        return;
+
     default:
-        t_Buffer->SetPixel(Loc, BlendUint32(ModUint32(Pixel, t_Light), t_Buffer->GetPixel(Loc),
-                                                 static_cast<float>(Alpha * INVERSE_MAX_UINT8)) * ParticleAlpha);
+        Buffer->SetPixel(Loc, BlendUint32(BlendUint32(Pixel, LightColor, Light), Buffer->GetPixel(Loc),
+                                                static_cast<f32>(Alpha * INVERSE_MAX_UINT8)));
         return;
     }
-}
+};
+
 
 } // namespace core

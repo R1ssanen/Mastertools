@@ -1,21 +1,20 @@
 #include "light.hpp"
 
-#include "glm/gtx/fast_square_root.hpp"
 #include "mesh.hpp"
-#include "srpch.hpp"
+#include "mtpch.hpp"
 #include "vertex.hpp"
 
 namespace core
 {
 
-PointLight PointLight::New(const glm::vec3& t_Pos, const glm::vec3& t_Color, float t_Intensity)
+PointLight PointLight::New(const glm::vec3& Pos, const glm::vec3& Color, f32 Intensity)
 {
-    return PointLight(_M{.Pos = t_Pos, .Color = t_Color, .Intensity = t_Intensity});
+    return PointLight(_M{.Pos = Pos, .Color = Color, .Intensity = Intensity});
 }
 
-float PointLight::GetLighting(const Vertex& t_Vertex) const
+f32 PointLight::GetLighting(const Vertex& Vertex) const
 {
-    const float Distance{glm::fastDistance(glm::vec3(t_Vertex.m_Pos), m.Pos)};
+    const f32 Distance{glm::fastDistance(glm::vec3(Vertex.m_Pos), m.Pos)};
     return m.Intensity / (Distance * Distance);
 }
 

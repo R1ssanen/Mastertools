@@ -4,16 +4,16 @@
 #include "camera.hpp"
 #include "keys.hpp"
 #include "settings.hpp"
-#include "srpch.hpp"
+#include "mtpch.hpp"
 
 namespace core
 {
 
-int ActionCallback(void* t_UserData, SDL_Event* t_Event)
+i32 ActionCallback(void* UserData, SDL_Event* Event)
 {
-    auto App{static_cast<core::App*>(t_UserData)};
+    auto App{static_cast<core::App*>(UserData)};
 
-    if (GetKey(SDL_SCANCODE_Q) || t_Event->type == SDL_QUIT)
+    if (GetKey(SDL_SCANCODE_Q) || Event->type == SDL_QUIT)
     {
         App->SetRunning(false);
     }

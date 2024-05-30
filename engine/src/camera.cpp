@@ -3,7 +3,7 @@
 #include "clipping.hpp"
 #include "keys.hpp"
 #include "settings.hpp"
-#include "srpch.hpp"
+#include "mtpch.hpp"
 
 namespace core
 {
@@ -13,9 +13,9 @@ glm::mat4 Camera::GetMatView() const
     return glm::lookAtRH(m.Pos, m.Pos + GetForward(), glm::vec3(0.f, 1.f, 0.f));
 }
 
-glm::mat4 Camera::GetMatProjection(float t_Width, float t_Height) const
+glm::mat4 Camera::GetMatProjection() const
 {
-    return glm::perspectiveFovRH(m.Fov, t_Width, t_Height, m.Near, m.Far);
+    return glm::perspectiveRH(m.Fov, GetRenderAspectRatio(), m.Near, m.Far);
 }
 
 glm::vec3 Camera::GetForward() const
@@ -72,41 +72,36 @@ void Camera::HandleRotation()
 {
     auto [DeltaMouseX, DeltaMouseY] = GetDeltaMouse();
 
-    float DeltaAngleYaw{static_cast<float>(DeltaMouseX / GetSettingSensitivity().x)},
-        DeltaAnglePitch{static_cast<float>(DeltaMouseY / GetSettingSensitivity().y)};
+    f32 DeltaAngleYaw = static_cast<f32>(DeltaMouseX / GetSettingSensitivity().x),
+        DeltaAnglePitch = static_cast<f32>(DeltaMouseY / GetSettingSensitivity().y);
 
-    float NewAnglePitch{glm::clamp(m.Angle.y + DeltaAnglePitch, -glm::radians(85.f), glm::radians(85.f))};
-    float NewAngleYaw{m.Angle.x - DeltaAngleYaw};
+    f32 NewAnglePitch = glm::clamp(m.Angle.y + DeltaAnglePitch, -glm::radians(85.f), glm::radians(85.f));
+    f32 NewAngleYaw = m.Angle.x - DeltaAngleYaw;
 
     m.Angle += glm::vec3(NewAngleYaw, NewAnglePitch, m.Angle.z);
     m.Angle *= 0.5f;
 }
 
-Camera Camera::New(const glm::vec3& t_Pos, const glm::vec3& t_Angle, float t_Fov, float t_Near, float t_Far) {
-    
-    Frustum ClipFrustum = {
-        Plane::New(glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, t_Near)),
-        Plane::New(glm::vec3(0.f, 0.f, -1.f), glm::vec3(0.f, 0.f, t_Far))
-    };
+Camera Camera::New(const glm::vec3& Pos, const glm::vec3& Angle, f32 Fov, f32 Near, f32 Far) {
 
-    float HalfFov = glm::radians(t_Fov * 0.5f);
-    float HalfHeight = std::tan(HalfFov) * t_Near;
-    float HalfWidth = HalfHeight * (16.f / 9.f);
+    f32 HalfFov = glm::radians(Fov * 0.5f);
+    f32 HalfHeight = std::tan(HalfFov) * Near;
+    f32 HalfWidth = HalfHeight * GetRenderAspectRatio();
 
-    glm::vec3 TopLeft = glm::normalize(glm::vec3(HalfWidth, HalfHeight, -t_Near)),
-        BottomLeft = glm::normalize(glm::vec3(HalfWidth, -HalfHeight, -t_Near)),
-        TopRight = glm::normalize(glm::vec3(-HalfWidth, HalfHeight, -t_Near)),
-        BottomRight = glm::normalize(glm::vec3(-HalfWidth, -HalfHeight, -t_Near));
+    glm::vec3 TopLeft = glm::normalize(glm::vec3(HalfWidth, HalfHeight, -Near)),
+        BottomLeft = glm::normalize(glm::vec3(HalfWidth, -HalfHeight, -Near)),
+        TopRight = glm::normalize(glm::vec3(-HalfWidth, HalfHeight, -Near)),
+        BottomRight = glm::normalize(glm::vec3(-HalfWidth, -HalfHeight, -Near));
 
     glm::vec3 NormalLeft = glm::cross(TopLeft, BottomLeft),
         NormalRight = glm::cross(BottomRight, TopRight),
         NormalTop = glm::cross(TopRight, TopLeft),
         NormalBottom = glm::cross(BottomLeft, BottomRight);
 
-    Frustum CullFrustum = {
-        Plane::New(glm::vec3(0.f, 0.f, -1.f), glm::vec3(0.f, 0.f, -t_Near)),
-        Plane::New(glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, -t_Far)),
-        
+    core::Frustum Frustum = {
+        Plane::New(glm::vec3(0.f, 0.f, -1.f), glm::vec3(0.f, 0.f, -Near)),
+        Plane::New(glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, -Far)),
+
         Plane::New(NormalLeft),
         Plane::New(NormalRight),
         Plane::New(NormalTop),
@@ -115,13 +110,12 @@ Camera Camera::New(const glm::vec3& t_Pos, const glm::vec3& t_Angle, float t_Fov
     
     return Camera(
         _M{
-        .Pos = t_Pos,
-        .Angle = t_Angle,
-        .Fov = t_Fov,
-        .Near = t_Near,
-        .Far = t_Far,
-        .ClipFrustum = ClipFrustum,
-        .CullFrustum = CullFrustum
+            .Frustum = Frustum,
+            .Pos = Pos,
+            .Angle = Angle,
+            .Fov = glm::radians(Fov),
+            .Near = Near,
+            .Far = Far
         }
     );
 }

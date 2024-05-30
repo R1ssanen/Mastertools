@@ -1,37 +1,33 @@
 #pragma once
 
-#include <initializer_list>
-
 #include "context.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
 #include "vertex.hpp"
 #include "buffer.hpp"
+#include "triangle.hpp"
 
 namespace core
 {
 
-void DrawWireframe(Context& t_Context, const triangle_t& t_Tri, uint8_t r, uint8_t g, uint8_t b, uint8_t a = 100);
+void DrawWireframe(Context& Context, const Triangle& Tri, u8 r, u8 g, u8 b, u8 a = 100);
 
-inline float Edge(float ax, float ay, float bx, float by, float cx, float cy)
+inline f32 Edge(f32 ax, f32 ay, f32 bx, f32 by, f32 cx, f32 cy)
 {
     return (cx - ax) * (by - ay) - (cy - ay) * (bx - ax);
 }
 
-inline float DoubleTriangleArea(float ax, float ay, float bx, float by, float cx, float cy)
+inline f32 DoubleTriangleArea(f32 ax, f32 ay, f32 bx, f32 by, f32 cx, f32 cy)
 {
-    return ax * (by - cy) + bx * (cy - ay) + cx * (ay - by);
+    return glm::dot(glm::vec3(ax, bx, cx), glm::vec3(by - cy, cy - ay, ay - by));
 }
 
-inline glm::vec3 CalculateMatrixRow(const glm::vec3& A, const glm::vec3& B)
-{
-    return glm::vec3(A.x * B.y - B.x * A.y, A.y - B.y, B.x - A.x);
-}
+void RenderTriBary(buffer_t Buffer, Triangle& Tri, f32 InverseFar);
 
-void RenderTriBary(buffer_t t_Buffer, DrawTri t_DrawTri, float t_InverseFar);
+void RenderTriScan(buffer_t Buffer, Triangle& Tri, f32 InverseFar);
 
 /*
-void RenderTriScan(Context& t_Context, triangle_t& t_Tri, texture_t t_Texture, float t_InverseFar,
-                   const shader_t& t_Shader);
+void RenderTriScan(Context& Context, triangle_t& Tri, texture_t Texture, f32 InverseFar,
+                   const shader_t& Shader);
 */
 } // namespace core

@@ -7,50 +7,48 @@
 #include "object.hpp"
 #include "scene.hpp"
 #include "skybox.hpp"
-#include "srpch.hpp"
+#include "mtpch.hpp"
 #include "timer.hpp"
 
-namespace core
-{
+namespace core {
 
-class App
-{
-  public:
-    void Run();
-    void Init();
-    void Delete() { delete this; }
-    void LogPerformance()
-    {
-        std::clog << "Avrg. Perf: " << m_Timer.GetAveragePerformance() << "ms/fr, " << m_Timer.GetTimeElapsed()
-                  << "ms Elapsed\n";
-    }
+    class App {
+      public:
 
-    static App* GetInstance()
-    {
-        if (m_Instance == nullptr)
-        {
-            m_Instance = new App();
+        void Run();
+        void Init();
+
+        void Delete() { delete this; }
+
+        inline void LogPerformance() {
+            std::clog << "Avrg. Perf: " << m_Timer.GetAveragePerformance() << "ms/fr, "
+                      << m_Timer.GetTimeElapsed() << "ms Elapsed\n";
         }
 
-        return m_Instance;
-    }
+        static App* GetInstance() {
+            if (m_Instance == nullptr) { m_Instance = new App(); }
 
-    void SetRunning(const bool& t_Value) { m_Running = t_Value; }
-    const Context& GetContext() const { return m_Context; }
+            return m_Instance;
+        }
 
-    App(App& other) = delete;
-    void operator=(const App&) = delete;
+        void           SetRunning(const b8& Value) { m_Running = Value; }
 
-  private:
-    App() = default;
-    ~App() = default;
+        const Context& GetContext() const { return m_Context; }
 
-    inline static App* m_Instance{nullptr};
-    bool m_Running{true};
-    Timer m_Timer = Timer::New();
-    Context m_Context = Context::New();
+        App(App& other)            = delete;
+        void operator=(const App&) = delete;
 
-    Scene m_ActiveScene = Scene::New(BUILTINS_DIR + "default.mgls");
-};
+      private:
+
+        App()  = default;
+        ~App() = default;
+
+        inline static App* m_Instance = nullptr;
+        b8               m_Running = true;
+        Timer              m_Timer       = Timer::New();
+        Context            m_Context     = Context::New();
+
+        Scene              m_ActiveScene = Scene::New(BUILTINS_DIR + "fire_demo.mgls");
+    };
 
 } // namespace core

@@ -1,50 +1,54 @@
-cmake_minimum_required(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
-project(Mastertools VERSION 24.1.0 DESCRIPTION "Software Rendering Engine")
+cmake_minimum_required(VERSION 3.28)
+project(mtools VERSION 24.2.0 DESCRIPTION "Software Rendering Engine" LANGUAGES CXX)
 
 add_executable(${PROJECT_NAME}
-  entry.cpp
-  src/context.cpp
-  src/application.cpp
-  src/render.cpp
-  src/camera.cpp
-  src/mesh.cpp
-  src/object.cpp
-  src/texture.cpp
-  src/clipping.cpp
-  src/color.cpp
-  src/skybox.cpp
-  src/callbacks.cpp
-  src/light.cpp
-  src/settings.cpp
-  src/scene.cpp
-  src/timer.cpp
-  src/emitter.cpp
+  "src/entry.cpp"
+  "src/context.cpp"
+  "src/application.cpp"
+  "src/render.cpp"
+  "src/camera.cpp"
+  "src/mesh.cpp"
+  "src/object.cpp"
+  "src/texture.cpp"
+  "src/clipping.cpp"
+  "src/color.cpp"
+  "src/skybox.cpp"
+  "src/callbacks.cpp"
+  "src/light.cpp"
+  "src/settings.cpp"
+  "src/scene.cpp"
+  "src/timer.cpp"
+  "src/emitter.cpp"
+  "src/triangle.cpp"
 )
-
-target_precompile_headers(${PROJECT_NAME} PUBLIC "deps/srpch.hpp")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
   CXX_STANDARD 20
   CXX_STANDARD_REQUIRED TRUE
+  CXX_SCAN_FOR_MODULES FALSE 
   VERSION ${PROJECT_VERSION}
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BUILD_TYPE}/"
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE src/ deps/)
+target_include_directories(${PROJECT_NAME} PRIVATE "src/" "ext/")
+target_precompile_headers(${PROJECT_NAME} PUBLIC "src/mtpch.hpp")
 
-find_library(SDL SDL2 NAMES SDL2 libSDL2)
-find_library(SDL_FONT SDL2_ttf NAMES SDL2_ttf libSDL2_ttf)
+add_subdirectory("ext/glm/")
+add_subdirectory("ext/sdl2/")
 
-find_package(OpenMP)
-IF(OpenMP_CXX_FOUND)
-  target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
-ENDIF()
+target_link_libraries(${PROJECT_NAME} PRIVATE glm SDL2 SDL2main)
 
-IF(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE EQUAL Debug)
-  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -pg -g -flto=auto -lphread -D_GLIBCXX_PARALLEL -march=native -mavx2)
-ELSE()
-  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -pg -O3 -flto=auto -march=native -mavx2) # -fomit-frame-pointer
-ENDIF()
+SET (BASE_COMPILE_FLAGS -Wall -Wextra -Wpedantic -lphread -march=native -flto=auto) 
+IF (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE EQUAL Debug)
+  target_compile_options(${PROJECT_NAME} PRIVATE -g ${BASE_COMPILE_FLAGS})
+ELSE ()
+  target_compile_options(${PROJECT_NAME} PRIVATE -O3 ${BASE_COMPILE_FLAGS})
+ENDIF ()
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL})
+add_custom_command(
+  TARGET ${PROJECT_NAME} POST_BUILD COMMAND
+  ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:SDL2>
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>
+  VERBATIM
+)
 

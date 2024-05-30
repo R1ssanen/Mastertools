@@ -1,13 +1,13 @@
 #pragma once
 
-#include "srpch.hpp"
+#include "mtpch.hpp"
 
 #define INVERSE_MAX_UINT8 1.f / 255.f
 
 namespace core
 {
 
-enum class Channel : uint8_t
+enum class Channel : u8
 {
     RED = 24,
     GREEN = 16,
@@ -17,23 +17,24 @@ enum class Channel : uint8_t
 
 // packing
 
-uint32_t ToUint32(float r, float g, float b, float a);
-uint32_t ToUint32(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-uint32_t ToUint32(const glm::vec4& t_Color);
+u32 ToUint32(f32 R, f32 G, f32 B, f32 A);
+u32 ToUint32(u8 R, u8 G, u8 B, u8 A);
+u32 ToUint32(const glm::u8vec4& RGBA);
+u32 ToUint32(const glm::vec4& RGBA);
 
 // unpacking
 
-std::array<uint8_t, 4> UnpackToArray(uint32_t t_Color);
-glm::vec4 UnpackToVec4(uint32_t t_Color);
-uint8_t Get(uint32_t t_Color, Channel t_ColorChannel);
+std::array<u8, 4> UnpackToArray(u32 RGBA);
+glm::vec4              UnpackToVec4(u32 RGBA);
+u8                Get(u32 RGBA, Channel ColorChannel);
 
 // operations
 
-uint32_t BlendUint32(uint32_t A, uint32_t B, float t_Scalar);
-uint32_t AverageUint32(uint32_t A, uint32_t B);
-uint32_t ModUint32(uint32_t t_Color, float t_Scalar);
+u32 BlendUint32(u32 A, u32 B, f32 Scalar);
+u32 AverageUint32(u32 A, u32 B);
+u32 ModUint32(u32 RGBA, f32 Scalar);
 
-float Luminosity(const glm::vec3& t_Color);
-uint32_t GetRandomColor();
+f32    Luminosity(const glm::vec3& RGB);
+u32 GetRandomColor();
 
 } // namespace core

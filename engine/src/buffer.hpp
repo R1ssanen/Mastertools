@@ -1,30 +1,31 @@
 #pragma once
 
-#include "srpch.hpp"
+#include "mtpch.hpp"
 
 namespace core {
 
     class Buffer {
         public:
-            uint32_t* GetColorBuffer() const { return m.ColorBuffer; }
-            float* GetDepthBuffer() const { return m.DepthBuffer; }
-            const int& GetWidth() const { return m.Width; }
-            const int& GetHeight() const { return m.Height; }
+            u32* GetColorBuffer() const { return m.ColorBuffer; }
+            f32* GetDepthBuffer() const { return m.DepthBuffer; }
+            const i32& GetWidth() const { return m.Width; }
+            const i32& GetHeight() const { return m.Height; }
+            i32 GetResolution() const { return m.Width * m.Height; }
 
-            void SetPixel(size_t t_Loc, uint32_t t_Color) { m.ColorBuffer[t_Loc] = t_Color; }
-            const uint32_t& GetPixel(size_t t_Loc) { return m.ColorBuffer[t_Loc]; }
-            void SetDepth(size_t t_Loc, float t_Depth) { m.DepthBuffer[t_Loc] = t_Depth; }
-            const float& GetDepth(size_t t_Loc) { return m.DepthBuffer[t_Loc]; }
+            void SetPixel(u64 Loc, u32 Color) { m.ColorBuffer[Loc] = Color; }
+            const u32& GetPixel(u64 Loc) { return m.ColorBuffer[Loc]; }
+            void SetDepth(u64 Loc, f32 Depth) { m.DepthBuffer[Loc] = Depth; }
+            const f32& GetDepth(u64 Loc) { return m.DepthBuffer[Loc]; }
 
-            Buffer(const Buffer& t_Other) { m = t_Other.m; }
-            static std::shared_ptr<Buffer> New(int t_Width, int t_Height) {
+            Buffer(const Buffer& Other) { m = Other.m; }
+            static std::shared_ptr<Buffer> New(i32 Width, i32 Height) {
                 return std::make_shared<Buffer>(
                     Buffer(
                         _M{
-                            .ColorBuffer = new uint32_t[t_Width * t_Height],
-                            .DepthBuffer = new float[t_Width * t_Height],
-                            .Width = t_Width,
-                            .Height = t_Height
+                            .ColorBuffer = new u32[Width * Height],
+                            .DepthBuffer = new f32[Width * Height],
+                            .Width = Width,
+                            .Height = Height
                         }
                     )
                 );
@@ -32,12 +33,12 @@ namespace core {
 
         private:
             struct _M {
-                uint32_t* ColorBuffer;
-                float* DepthBuffer;
-                int Width, Height;
+                u32* ColorBuffer;
+                f32* DepthBuffer;
+                i32 Width, Height;
             } m;
 
-            explicit Buffer(_M&& t_Data) : m{std::move(t_Data)} {}
+            explicit Buffer(_M&& Data) : m{std::move(Data)} {}
     };
 
     using buffer_t = std::shared_ptr<Buffer>;

@@ -3,10 +3,11 @@
 #include "camera.hpp"
 #include "context.hpp"
 #include "mesh.hpp"
-#include "srpch.hpp"
+#include "mtpch.hpp"
 #include "texture.hpp"
 #include "timer.hpp"
 #include "vertex.hpp"
+#include "triangle.hpp"
 
 namespace core
 {
@@ -14,23 +15,24 @@ namespace core
 class Skybox
 {
   public:
-    void Render(const Camera& t_Camera, buffer_t t_Buffer) const;
+    void Render(const Camera& Camera, buffer_t Buffer) const;
     void Update();
 
-    static Skybox New(uint32_t t_TextureID);
+    static Skybox New(u32 TextureID);
 
   private:
-    triangle_vector_t Transform(const Camera& t_Camera, buffer_t t_Buffer) const;
-    void RenderTri(buffer_t t_Buffer, const triangle_t& t_Tri) const;
+    void Transform(const Camera& Camera, buffer_t Buffer, triangle_vector_t& o_TransformedTriangles) const;
+    void RenderTri(buffer_t Buffer, const Triangle& Tri) const;
 
     struct _M
     {
         mesh_t Mesh;
+        texture_t Texture;
         core::Timer Timer;
-        double State;
+        f64 State;
     } m;
 
-    Skybox(_M&& t_Data) : m{std::move(t_Data)} {}
+    Skybox(_M&& Data) : m{std::move(Data)} {}
 };
 
 } // namespace core

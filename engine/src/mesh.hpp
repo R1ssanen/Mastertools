@@ -1,6 +1,6 @@
 #pragma once
 
-#include "srpch.hpp"
+#include "mtpch.hpp"
 #include "texture.hpp"
 #include "vertex.hpp"
 
@@ -13,11 +13,11 @@ class Mesh
     const vertex_vector_t& GetVertices() const { return m.Vertices; }
     const index_vector_t& GetIndices() const { return m.Indices; }
     const glm::vec3& GetMassCenter() const { return m.MassCenter; }
-    const float& GetBoundingRadius() const { return m.BoundingRadius; }
-    const uint32_t& GetTextureID() const { return m.TextureID; }
+    const f32& GetBoundingRadius() const { return m.BoundingRadius; }
+    const u32& GetTextureID() const { return m.TextureID; }
 
-    Mesh(const Mesh& t_Other) { m = t_Other.m; }
-    static std::shared_ptr<Mesh> New(const vertex_vector_t& t_Vertices, const index_vector_t& t_Indices, uint32_t t_TextureID);
+    Mesh(const Mesh& Other) { m = Other.m; }
+    static std::shared_ptr<Mesh> New(const vertex_vector_t& Vertices, const index_vector_t& Indices, u32 TextureID);
 
   private:
     struct _M
@@ -25,17 +25,19 @@ class Mesh
         vertex_vector_t Vertices;
         index_vector_t Indices;
         glm::vec3 MassCenter;
-        float BoundingRadius;
-        uint32_t TextureID;
+        f32 BoundingRadius;
+        u32 TextureID;
     } m;
 
-    explicit Mesh(_M&& t_Data) : m{std::move(t_Data)} {}
+    explicit Mesh(_M&& Data) : m{std::move(Data)} {}
 };
 
 using mesh_t = std::shared_ptr<Mesh>;
 using mesh_vector_t = std::vector<mesh_t>;
 
-mesh_vector_t LoadAsset(const std::filesystem::path& t_Path, bool t_IsMipmapped, bool t_IsDoublesided);
-mesh_t LoadAsset(const std::string& t_Path, uint32_t t_TextureID);
+mesh_vector_t LoadAsset(const std::filesystem::path& Path, b8 IsMipmapped, b8 IsDoublesided);
+mesh_t LoadAsset(const std::string& Path, u32 TextureID);
+
+std::vector<glm::vec2> GetConvexHull(const vertex_vector_t& Vertices);
 
 } // namespace core

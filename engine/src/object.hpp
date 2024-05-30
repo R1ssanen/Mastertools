@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mesh.hpp"
-#include "srpch.hpp"
+#include "mtpch.hpp"
 
 namespace core
 {
@@ -10,16 +10,17 @@ class Object
 {
   public:
     glm::mat4 GetMatScale() const;
-    glm::mat4 GetMatRotation(float t_DeltaTime = 0.f) const;
+    glm::mat4 GetMatRotation(const glm::vec3& RotatedPoint = glm::vec3(0.f)) const;
     glm::mat4 GetMatTranslation() const;
+    glm::mat4 GetMatModel(const glm::vec3& RotatedPoint = glm::vec3(0.f)) const;
 
     const mesh_vector_t& GetMeshes() const { return m.Meshes; }
     const glm::vec3& GetPos() const { return m.Pos; }
     const glm::vec3& GetAngle() const { return m.Angle; }
     const glm::vec3& GetScale() const { return m.Scale; }
 
-    static Object New(const mesh_vector_t& t_Meshes, const glm::vec3& t_Pos, const glm::vec3& t_Angle,
-                      const glm::vec3& t_Scale);
+    static Object New(const mesh_vector_t& Meshes, const glm::vec3& Pos,
+                      const glm::vec3& Angle, const glm::vec3& Scale);
 
   private:
     struct _M
@@ -30,7 +31,7 @@ class Object
         glm::vec3 Scale;
     } m;
 
-    Object(_M&& t_Data) : m{std::move(t_Data)} {}
+    Object(_M&& Data) : m{std::move(Data)} {}
 };
 
 using object_vector_t = std::vector<Object>;

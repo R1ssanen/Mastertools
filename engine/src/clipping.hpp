@@ -1,7 +1,8 @@
 #pragma once
 
-#include "srpch.hpp"
+#include "mtpch.hpp"
 #include "vertex.hpp"
+#include "triangle.hpp"
 
 namespace core
 {
@@ -9,12 +10,12 @@ namespace core
 class Plane
 {
   public:
-    float SignedDistance(const glm::vec3& t_Point) const;
+    f32 SignedDistance(const glm::vec3& Point) const;
 
     const glm::vec3& GetPoint() const { return m.Point; }
     const glm::vec3& GetNormal() const { return m.Normal; }
 
-    static Plane New(const glm::vec3& t_Normal, const glm::vec3& t_Point = glm::vec3(0.f));
+    static Plane New(const glm::vec3& Normal, const glm::vec3& Point = glm::vec3(0.f));
 
   private:
     struct _M {
@@ -22,17 +23,15 @@ class Plane
         glm::vec3 Normal;
     } m;
 
-    Plane(_M&& t_Data) : m{std::move(t_Data)} {}
+    Plane(_M&& Data) : m{std::move(Data)} {}
 };
 
 using Frustum = std::vector<Plane>;
 
-Vertex IntersectLine(const Plane& t_Plane, const Vertex& A, const Vertex& B);
+Vertex IntersectLine(const Plane& Plane, const Vertex& A, const Vertex& B);
 
-glm::vec3 IntersectLine(const Plane& t_Plane, const glm::vec3& A, const glm::vec3& B);
+void ClipTriangle(Triangle& Tri, const Plane& Plane, triangle_vector_t& o_ClipTriangles);
 
-triangle_vector_t ClipTriangle(const triangle_t& t_Tri, const Plane& t_Plane);
-
-triangle_vector_t FrustumClipTriangle(const triangle_t& t_Tri, const Frustum& t_Frustum);
+void FrustumClipTriangle(const Triangle& Tri, const Frustum& Frustum, triangle_vector_t& o_ClipTriangles);
 
 } // namespace core

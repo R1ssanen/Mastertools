@@ -1,9 +1,9 @@
 #pragma once
 
-#include "srpch.hpp"
+#include "mtpch.hpp"
 
 namespace core {
 
-int ActionCallback(void* t_UserData, SDL_Event* t_Event);
+i32 ActionCallback(void* UserData, SDL_Event* Event);
 
 }  // namespace core

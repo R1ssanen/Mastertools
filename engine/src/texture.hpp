@@ -1,126 +1,167 @@
 #pragma once
 
-#include "srpch.hpp"
+#include "mtpch.hpp"
 
-namespace core
-{
+namespace core {
 
-class ImageData
-{
-  public:
-    virtual ~ImageData() = default;
-    ImageData(uint32_t* t_Data, unsigned t_Width, unsigned t_Height)
-        : Data{t_Data}, m_Width{t_Width}, m_Height{t_Height}, m_Resolution{t_Width * t_Height}
-    {
-    }
+    class ImageData {
+      public:
 
-    const unsigned& GetWidth() const { return m_Width; }
-    const unsigned& GetHeight() const { return m_Height; }
-    const size_t& GetResolution() const { return m_Resolution; }
+        ~ImageData() = default;
 
-    void SaveImage(const std::string& t_Filename) const;
+        ImageData(u32* Data, u32 Width, u32 Height)
+            : Data{ Data }, m_Width{ Width }, m_Height{ Height },
+              m_Resolution{ Width * Height } { }
 
-    uint32_t* Data;
+        const u32& GetWidth() const { return m_Width; }
 
-  private:
-    const unsigned m_Width, m_Height;
-    const size_t m_Resolution;
-};
+        const u32& GetHeight() const { return m_Height; }
 
-using image_t = std::shared_ptr<ImageData>;
+        const u64&   GetResolution() const { return m_Resolution; }
 
-image_t LoadImage(const std::string& t_Path);
+        void            SaveImage(const std::string& Filename) const;
 
-class Texture
-{
-  public:
-    ~Texture() = default;
-    Texture(const std::string& t_Name, uint32_t& t_ID, bool t_IsTransparent, bool t_IsDoublesided)
-        : m_Name{t_Name}, m_ID{t_ID}, m_IsTransparent{t_IsTransparent}, m_IsDoublesided{t_IsDoublesided}
-    {
-    }
+        u32*       Data;
 
-    const std::string& GetName() const { return m_Name; }
-    const uint32_t& GetID() const { return m_ID; }
-    const bool& IsTransparent() const { return m_IsTransparent; }
-    const bool& IsDoublesided() const { return m_IsDoublesided; }
+      private:
 
-    virtual uint32_t Sample(const glm::vec2& t_UV, float t_Depth) const = 0;
-    virtual void Save(const std::string& t_Filename) const = 0;
+        const u32 m_Width, m_Height;
+        const u64   m_Resolution;
+    };
 
-  private:
-    std::string m_Name;
-    uint32_t m_ID;
-    bool m_IsTransparent = false, m_IsDoublesided = false;
-};
+    using image_t = std::shared_ptr<ImageData>;
 
-using texture_t = std::shared_ptr<Texture>;
+    image_t              LoadImage(const std::string& Path);
 
-class ImageTexture : public Texture
-{
-  public:
-    ~ImageTexture() = default;
+    std::vector<image_t> LoadGif(const std::string& Path);
 
-    ImageTexture(image_t t_Image, const std::string& t_Name, uint32_t t_ID, bool t_IsTransparent, bool t_IsDoublesided)
-        : Texture(t_Name, t_ID, t_IsTransparent, t_IsDoublesided), m_Image{t_Image}
-    {
-    }
+    class Texture {
+      public:
 
-    static texture_t New(const std::string& t_Path, bool t_IsTransparent = false, bool t_IsDoublesided = false);
+        virtual ~Texture() = default;
 
-    uint32_t Sample(const glm::vec2& t_UV, float t_Depth) const override;
-    void Save(const std::string& t_Filename) const override;
+        Texture(
+            const std::string& Name, u32& ID, b8 IsTransparent, b8 IsDoublesided
+        )
+            : m_Name{ Name }, m_ID{ ID }, m_IsTransparent{ IsTransparent },
+              m_IsDoublesided{ IsDoublesided } { }
 
-  private:
-    image_t m_Image;
-};
+        const std::string& GetName() const { return m_Name; }
 
-class MipmapTexture : public Texture
-{
-  public:
-    ~MipmapTexture() = default;
+        const u32&    GetID() const { return m_ID; }
 
-    MipmapTexture(const std::vector<image_t>& t_Mipmap, uint8_t t_Miplevels, const std::string& t_Name, uint32_t t_ID, 
-                  bool t_IsTransparent, bool t_IsDoublesided)
-        : Texture(t_Name, t_ID, t_IsTransparent, t_IsDoublesided), m_Mipmap{t_Mipmap}, m_Miplevels{t_Miplevels}
-    {
-    }
+        const b8&        IsTransparent() const { return m_IsTransparent; }
 
-    static texture_t New(const std::string& t_Path, uint8_t t_Miplevels, bool t_IsTransparent = false,
-                         bool t_IsDoublesided = false);
+        const b8&        IsDoublesided() const { return m_IsDoublesided; }
 
-    uint32_t Sample(const glm::vec2& t_UV, float t_Depth) const override;
-    void Save(const std::string& t_Filename) const override;
+        virtual u32   Sample(const glm::vec2& UV, f32 Scalar) const = 0;
+        virtual void       Save(const std::string& Filename) const           = 0;
 
-  private:
-    std::vector<image_t> m_Mipmap;
-    uint8_t m_Miplevels;
-};
+      private:
 
-class ColorTexture : public Texture
-{
-  public:
-    ~ColorTexture() = default;
+        std::string m_Name;
+        u32    m_ID;
+        b8        m_IsTransparent, m_IsDoublesided;
+    };
 
-    ColorTexture(const uint32_t& t_Color, const std::string& t_Name, uint32_t t_ID, bool t_IsTransparent, bool t_IsDoublesided)
-        : Texture(t_Name, t_ID, t_IsTransparent, t_IsDoublesided), m_Color{t_Color}
-    {
-    }
+    using texture_t = std::shared_ptr<Texture>;
 
-    static texture_t New(const std::string& t_Name, const uint32_t& t_Color, bool t_IsTransparent = false,
-                         bool t_IsDoublesided = false);
+    class ImageTexture : public Texture {
+      public:
 
-    uint32_t Sample(const glm::vec2& t_UV, float t_Depth) const override;
-    void Save(const std::string& t_Filename) const override;
+        ImageTexture(
+            image_t Image, const std::string& Name, u32 ID, b8 IsTransparent,
+            b8 IsDoublesided
+        )
+            : Texture(Name, ID, IsTransparent, IsDoublesided), m_Image{ Image } { }
 
-  private:
-    const uint32_t m_Color;
-};
+        static texture_t
+        New(const std::string& Path, b8 IsTransparent = false, b8 IsDoublesided = false);
 
-texture_t GetTexture(const std::string& t_Name);
-texture_t GetTexture(uint32_t t_ID);
+        u32 Sample(const glm::vec2& UV, f32 Depth) const override;
+        void     Save(const std::string& Filename) const override;
 
-texture_t GetDefaultTexture();
-texture_t GetDefaultSkyboxTexture();
+      protected:
+
+        image_t m_Image;
+    };
+
+    class MipmapTexture : public Texture {
+      public:
+
+        MipmapTexture(
+            const std::vector<image_t>& Mipmap, u8 Miplevels, const std::string& Name,
+            u32 ID, b8 IsTransparent, b8 IsDoublesided
+        )
+            : Texture(Name, ID, IsTransparent, IsDoublesided), m_Mipmap{ Mipmap },
+              m_Miplevels{ Miplevels } { }
+
+        static texture_t
+                 New(const std::string& Path, u8 Miplevels, b8 IsTransparent = false,
+                     b8 IsDoublesided = false);
+
+        u32 Sample(const glm::vec2& UV, f32 Depth) const override;
+        void     Save(const std::string& Filename) const override;
+
+      protected:
+
+        std::vector<image_t> m_Mipmap;
+        u8              m_Miplevels;
+    };
+
+    class AnimatedTexture
+        : public MipmapTexture { // animated texture uses same structure as mipmapped texture
+      public:
+
+        AnimatedTexture(
+            const std::vector<image_t>& ImageFrames, f32 PlaybackSpeed,
+            const std::string& Name, u32 ID, b8 IsTransparent, b8 IsDoublesided
+        )
+            : MipmapTexture(
+                  ImageFrames, static_cast<u8>(ImageFrames.size()), Name, ID,
+                  IsTransparent, IsDoublesided
+              ),
+              m_PlaybackSpeed{ PlaybackSpeed } { }
+
+        static texture_t
+                 New(const std::string& Path, f32 PlaybackSpeed, b8 IsTransparent = false,
+                     b8 IsDoublesided = false);
+
+        u32 Sample(const glm::vec2& UV, f32 AnimationState) const override;
+
+      private:
+
+        f32 m_PlaybackSpeed;
+    };
+
+    class ColorTexture : public Texture {
+      public:
+
+        ~ColorTexture() = default;
+
+        ColorTexture(
+            const u32& Color, const std::string& Name, u32 ID, b8 IsTransparent,
+            b8 IsDoublesided
+        )
+            : Texture(Name, ID, IsTransparent, IsDoublesided), m_Color{ Color } { }
+
+        static texture_t
+        New(const std::string& Name, const u32& Color, b8 IsTransparent = false,
+            b8 IsDoublesided = false);
+
+        u32 Sample(const glm::vec2& UV, f32 Depth) const override;
+
+        void     Save(const std::string&) const override { return; }
+
+      private:
+
+        const u32 m_Color;
+    };
+
+    texture_t GetTexture(const std::string& Name);
+    texture_t GetTexture(u32 ID);
+
+    texture_t GetDefaultTexture();
+    texture_t GetDefaultSkyboxTexture();
 
 } // namespace core

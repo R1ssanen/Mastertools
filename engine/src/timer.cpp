@@ -1,17 +1,17 @@
 #include "timer.hpp"
 
-#include "srpch.hpp"
+#include "mtpch.hpp"
 
 namespace core
 {
 
-Timer Timer::New(double t_TimeElapsed, size_t t_FramesElapsed)
+Timer Timer::New(f64 TimeElapsed, u64 FramesElapsed)
 {
     return Timer(_M{.TimeFrameStart = std::chrono::high_resolution_clock::now(),
-                    .TimeElapsed = t_TimeElapsed,
+                    .TimeElapsed = TimeElapsed,
                     .DeltaTime = 0.0,
                     .Performance = 0.0,
-                    .FramesElapsed = t_FramesElapsed});
+                    .FramesElapsed = FramesElapsed});
 }
 
 void Timer::Tick()
