@@ -1,17 +1,20 @@
 {
   "scene": "default_1",
-  "skybox": "default",
+
   "camera": {
-    "far": 15
+    "far": 500
   },
   "objects": [
     {
-      "path": "../../../resources/assets/home/home.obj"
+      "path": "C:/Users/akeon/Documents/Blender_projects/home/home.obj"
     }
   ],
   "lights": {
     "point": [
-      {}
+      {
+        "intensity": 1,
+        "pos": [1, 0, -0.5]
+      }
     ],
     "directional": []
   }
