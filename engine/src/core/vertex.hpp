@@ -8,9 +8,10 @@
 namespace mt {
 
     struct Vertex {
-        glm::vec4 Pos, Normal;
-        glm::vec2 UV;
-        f32       Light;
+        glm::vec4 Pos;
+        glm::vec4 Normal = glm::vec4(0.f);
+        glm::vec2 UV     = glm::vec2(0.f);
+        f32       Light  = 0.f;
     };
 
     using vertex_vector_t = std::vector<Vertex>;

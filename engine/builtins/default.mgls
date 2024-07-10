@@ -1,8 +1,9 @@
 {
   "scene": "default_1",
+  "skybox": "default",
 
   "camera": {
-    "far": 500
+    "far": 15
   },
   "objects": [
     {
@@ -12,8 +13,8 @@
   "lights": {
     "point": [
       {
-        "intensity": 1,
-        "pos": [1, 0, -0.5]
+        "intensity": 1.6,
+        "pos": [-5.2, -0.2, 1.9]
       }
     ],
     "directional": []

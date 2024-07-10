@@ -14,6 +14,10 @@
 #include "triangle.hpp"
 #include "vertex.hpp"
 
+//
+#include "../math/intersection.hpp"
+#include "../math/octree.hpp"
+
 namespace mt {
 
     void App::Init() {
@@ -24,7 +28,11 @@ namespace mt {
 
     void App::Run() {
 
+        math::Octree Octree = math::Octree(math::AABB(-0.5, -0.5, -0.5, 0.5, 0.5, 0.5), 4);
+
         for (; m_Running; SDL_PumpEvents()) {
+            b8 CollisionHandled = false;
+
             m_ActiveScene.Update(m_Timer.GetTimeElapsed() * 0.001f);
 
             glm::mat4         MatView       = m_ActiveScene.GetCamera().GetMatView();
@@ -38,12 +46,13 @@ namespace mt {
                 for (mesh_t Mesh : Object.GetMeshes()) {
 
                     math::VolumeIntersectionFlag Flag =
-                        FrustumCullBoundingSphere(m_ActiveScene.GetCamera(), Mesh, Object.GetPos());
+                        FrustumCullAABB(m_ActiveScene.GetCamera(), Mesh, Object.GetPos());
 
                     if (Flag == math::VolumeIntersectionFlag::OUT) { continue; }
 
-                    // u32  DebugColor = GetDebugCullColor(Flag);
-                    // auto Texture    = ColorTexture::New(std::to_string(DebugColor), DebugColor);
+                    // u32       DebugColor = GetDebugCullColor(Flag);
+                    // texture_t Texture = ColorTexture::New(std::to_string(DebugColor),
+                    // DebugColor);
                     texture_t       Texture       = GetTexture(Mesh->GetTextureID());
 
                     vertex_vector_t TransVertices = Mesh->GetVertices();
@@ -64,6 +73,36 @@ namespace mt {
                     }
 
                     for (Triangle& Tri : ConstructTriangles(Mesh, TransVertices)) {
+
+                        if (ViewspaceBackfaceCull(Tri, m_ActiveScene.GetCamera())) { continue; }
+
+                        if (!CollisionHandled) { // Collision testing
+                            constexpr f32 PlayerHeight = 1.3f;
+                            glm::mat4     MatCamera    = glm::inverse(MatView);
+
+                            auto&         Camera       = m_ActiveScene.GetCamera();
+                            math::Ray     WorldspaceRay(
+                                Camera.GetPos(), glm::vec3(0.f, PlayerHeight, 0.f)
+                            );
+
+                            auto Result = math::IntersectRayTriangle(
+                                WorldspaceRay, MatCamera * Tri.m_Vertices[0].Pos,
+                                MatCamera * Tri.m_Vertices[1].Pos, MatCamera * Tri.m_Vertices[2].Pos
+                            );
+
+                            if (Result.has_value()) {
+                                const glm::vec3 WorldspaceIntersection = Result.value();
+
+                                Camera.SetPos(
+                                    WorldspaceIntersection + glm::vec3(0.f, -PlayerHeight, 0.f)
+                                );
+
+                                // Texture          = ColorTexture::New("collision_debug",
+                                // 0xFF0F00FF);
+                                CollisionHandled = true;
+                            }
+                        }
+
                         triangle_vector_t ClippedTriangles;
 
                         if (Flag == math::VolumeIntersectionFlag::INTERSECTS) {
@@ -89,9 +128,7 @@ namespace mt {
                                 Vertex.Pos.y = (Vertex.Pos.y + 1.f) * 0.5f;
                             }
 
-                            if (!Texture->IsDoublesided() && ClipspaceBackfaceCull(ClippedTri)) {
-                                continue;
-                            }
+                            // if (ClipspaceBackfaceCull(ClippedTri)) { continue; }
 
                             ClippedTri.CalculateAverageDepth();
                             ClippedTri.m_TextureID = Texture->GetID();

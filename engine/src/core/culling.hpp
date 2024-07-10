@@ -9,18 +9,16 @@
 
 namespace mt {
 
-    inline b8 WorldspaceBackfaceCull(const Triangle& Tri, const Camera& Camera) {
-        const auto [a, b, c] = Tri.m_Vertices;
-        glm::vec3 Normal =
-            Camera.GetMatView() *
-            glm::vec4(
-                glm::cross(glm::vec3(c.Normal - a.Normal), glm::vec3(b.Normal - a.Normal)), 1.f
-            );
+    inline b8 ViewspaceBackfaceCull(const Triangle& Tri, const Camera& Camera) {
+        const auto [a, b, c]      = Tri.m_Vertices;
 
-        glm::vec3 View = Camera.GetMatView() * glm::vec4(Camera.GetForward(), 1.f);
+        glm::vec3 ViewspaceNormal = glm::cross(
+            glm::vec3(glm::normalize(c.Pos - a.Pos)), glm::vec3(glm::normalize(b.Pos - a.Pos))
+        );
 
-        //! Mesh->Texture->IsDoublesided() &&
-        return glm::dot(glm::normalize(View), glm::normalize(Normal)) <= 0.f;
+        glm::vec3 ViewspaceAvrg = (a.Pos + b.Pos + c.Pos) * glm::third<float>();
+
+        return glm::dot(ViewspaceNormal, ViewspaceAvrg) <= 0.f;
     }
 
     inline b8 ClipspaceBackfaceCull(const Triangle& Tri) {
@@ -54,11 +52,11 @@ namespace mt {
     inline math::VolumeIntersectionFlag
     FrustumCullAABB(const Camera& Camera, mesh_t Mesh, const glm::vec3& ObjectPos) {
 
-        glm::mat4         MatCamera    = Camera.GetMatView(); // glm::inverse(Camera.GetMatView());
-        const glm::mat4&  MatTransform = MatCamera * glm::translate(glm::mat4(1.f), ObjectPos);
+        glm::mat4         MatCamera      = glm::inverse(Camera.GetMatView());
+        const glm::mat4&  MatTransform   = glm::translate(glm::mat4(1.f), ObjectPos);
 
-        const math::AABB& AABB         = Mesh->GetAABB();
-        const math::AABB  TransformedAABB = math::AABB(
+        const math::AABB& AABB           = Mesh->GetAABB();
+        const math::AABB  WorldspaceAABB = math::AABB(
             MatTransform * glm::vec4(AABB.GetMin(), 1.f),
             MatTransform * glm::vec4(AABB.GetMax(), 1.f)
         );
@@ -70,7 +68,7 @@ namespace mt {
                 MatCamera * glm::vec4(Plane.GetPoint(), 1.f)
             );
 
-            auto Flag = math::IntersectPlaneAABB(TransformedAABB, Plane);
+            auto Flag = math::IntersectPlaneAABB(WorldspaceAABB, WorldspacePlane);
             if (Flag != math::VolumeIntersectionFlag::IN) { return Flag; }
         }
 

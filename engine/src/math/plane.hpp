@@ -21,8 +21,6 @@ namespace mt::math {
             glm::vec3 Point;
             glm::vec3 Normal;
         } m;
-
-        Plane(_M&& Data) : m{ std::move(Data) } { }
     };
 
     using Frustum = std::vector<Plane>;

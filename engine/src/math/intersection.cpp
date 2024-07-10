@@ -12,6 +12,8 @@ namespace {
 
 namespace mt::math {
 
+    u32    GetDebugCullColor(VolumeIntersectionFlag Flag) { return s_CullDebugColoring[Flag]; }
+
     Vertex IntersectLinePlane(const Plane& Plane, const Vertex& A, const Vertex& B) {
         const f32 T = glm::clamp(
             glm::dot(Plane.GetPoint() - glm::vec3(A.Pos), Plane.GetNormal()) /
@@ -46,6 +48,40 @@ namespace mt::math {
         }
     }
 
-    u32 GetDebugCullColor(VolumeIntersectionFlag Flag) { return s_CullDebugColoring[Flag]; }
+    std::optional<glm::vec3> IntersectRayTriangle(
+        const math::Ray& Ray, const glm::vec3& A, const glm::vec3& B, const glm::vec3& C
+    ) {
+        constexpr f32 Epsilon       = std::numeric_limits<f32>::epsilon();
+
+        glm::vec3     Edge1         = B - A;
+        glm::vec3     Edge2         = C - A;
+        glm::vec3     RayCrossEdge2 = glm::cross(Ray.GetDirection(), Edge2);
+        f32           Det           = glm::dot(Edge1, RayCrossEdge2);
+
+        // This ray is parallel to this triangle.
+        if (Det > -Epsilon && Det < Epsilon) { return std::nullopt; }
+
+        f32       InvDet = 1.f / Det;
+        glm::vec3 RayToA = Ray.GetOrigin() - A;
+        f32       U      = InvDet * glm::dot(RayToA, RayCrossEdge2);
+
+        if (U < 0 || U > 1) { return std::nullopt; }
+
+        glm::vec3 RayToACrossEdge1 = glm::cross(RayToA, Edge1);
+        f32       V                = InvDet * glm::dot(Ray.GetDirection(), RayToACrossEdge1);
+
+        if (V < 0 || U + V > 1) { return std::nullopt; }
+
+        // At this stage we can compute t to find out where the intersection point is on the
+        // line.
+        f32 T = InvDet * glm::dot(Edge2, RayToACrossEdge1);
+
+        // ray intersection
+        if (T > Epsilon) {
+            return Ray.Trace(T);
+        } else { // This means that there is a line intersection but not a ray intersection.
+            return std::nullopt;
+        }
+    }
 
 } // namespace mt::math

@@ -21,9 +21,10 @@ namespace mt {
 
         const glm::vec3&     GetScale() const { return m.Scale; }
 
-        static Object
-        New(const mesh_vector_t& Meshes, const glm::vec3& Pos, const glm::vec3& Angle,
-            const glm::vec3& Scale);
+        Object(
+            const mesh_vector_t& Meshes, const glm::vec3& Pos, const glm::vec3& Angle,
+            const glm::vec3& Scale
+        );
 
       private:
 

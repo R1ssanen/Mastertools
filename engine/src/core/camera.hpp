@@ -3,21 +3,24 @@
 #include "../math/plane.hpp"
 #include "../mtpch.hpp"
 
-#define CAMERA_SPEED 0.05f
+#define CAMERA_SPEED 0.017f
 
 namespace mt {
 
     class Camera {
       public:
 
-        glm::mat4            GetMatView() const;
-        glm::mat4            GetMatProjection() const;
+        glm::mat4        GetMatView() const;
+        glm::mat4        GetMatProjection() const;
 
-        glm::vec3            GetForward() const;
-        glm::vec3            GetRight() const;
-        glm::vec3            GetUp() const;
+        glm::vec3        GetForward() const;
+        glm::vec3        GetRight() const;
+        glm::vec3        GetUp() const;
 
-        const glm::vec3&     GetPos() const { return m.Pos; }
+        const glm::vec3& GetPos() const { return m.Pos; }
+
+        // REMOVE !!!
+        void                 SetPos(glm::vec3 Pos) { m.Pos = Pos; }
 
         const glm::vec3&     GetAngle() const { return m.Angle; }
 

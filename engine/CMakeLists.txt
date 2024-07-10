@@ -20,7 +20,7 @@ add_executable(${PROJECT_NAME}
   "src/core/timer.cpp"
   "src/core/emitter.cpp"
   "src/core/triangle.cpp"
- "src/core/uuid.cpp" "src/math/intersection.cpp" "src/math/plane.cpp" "src/math/aabb.cpp")
+ "src/core/uuid.cpp" "src/math/intersection.cpp" "src/math/plane.cpp" "src/math/aabb.cpp" "src/math/ray.cpp" "src/math/octree.cpp")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
   CXX_STANDARD 20

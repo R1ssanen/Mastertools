@@ -23,11 +23,10 @@ namespace mt {
         return MatTranslation * MatRotation * MatScale;
     }
 
-    Object Object::New(
+    Object::Object(
         const mesh_vector_t& Meshes, const glm::vec3& Pos, const glm::vec3& Angle,
         const glm::vec3& Scale
-    ) {
-        return Object(_M{ .Meshes = Meshes, .Pos = Pos, .Angle = Angle, .Scale = Scale });
-    }
+    )
+        : m(_M{ .Meshes = Meshes, .Pos = Pos, .Angle = Angle, .Scale = Scale }) { }
 
 } // namespace mt

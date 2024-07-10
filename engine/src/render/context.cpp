@@ -10,7 +10,7 @@ namespace {
     constexpr mt::u8  BloomIntensity        = 120;
     constexpr mt::i32 BloomDownsamplePasses = 6;
     constexpr mt::u8  MinBloomlayerSize     = 3;
-    constexpr mt::f32 BloomThreshold        = 0.7f;
+    constexpr mt::f32 BloomThreshold        = 0.8f;
 } // namespace
 
 namespace mt {

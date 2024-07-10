@@ -154,8 +154,7 @@ namespace mt {
                                                 ? JsonArrayToVec3(Object["scale"])
                                                 : glm::vec3(1.f);
 
-                    Objects.push_back(Object::New(LoadedMeshes, ObjectPos, ObjectAngle, ObjectScale)
-                    );
+                    Objects.emplace_back(LoadedMeshes, ObjectPos, ObjectAngle, ObjectScale);
                 }
             }
 

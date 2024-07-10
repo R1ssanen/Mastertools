@@ -20,11 +20,12 @@ namespace mt {
 
         const std::optional<Skybox>&   GetSkybox() const { return m.Skybox; }
 
-        const Camera&                  GetCamera() const { return m.Camera; }
+        // MAKE CONST AGAIN !!!
+        Camera&            GetCamera() { return m.Camera; }
 
-        const std::string&             GetName() const { return m.Name; }
+        const std::string& GetName() const { return m.Name; }
 
-        void                           Update(f64 DeltaTime);
+        void               Update(f64 DeltaTime);
 
         Scene(const std::string& Path);
 
