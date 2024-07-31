@@ -1,8 +1,8 @@
 #include "../mtpch.hpp"
 #include "application.hpp"
 
-mt::i32 SDL_main(mt::i32 argc, char** argv) {
-    std::clog << "Running Mastertools Engine 24.2.0 ...\n";
+mt::i32 main(mt::i32 argc, char** argv) {
+    std::clog << "Running Mastertools Engine 24.3.0 ...\n";
 
     mt::LoadSettings();
     auto App = mt::App::GetInstance();

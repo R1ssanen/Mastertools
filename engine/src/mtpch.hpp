@@ -22,20 +22,20 @@
 #include <vector>
 
 #define GLM_USE_EXPERIMENTAL
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/packing.hpp"
-#include "glm/gtc/random.hpp"
-#include "glm/gtx/component_wise.hpp"
-#include "glm/gtx/euler_angles.hpp"
-#include "glm/gtx/fast_exponential.hpp"
-#include "glm/gtx/fast_square_root.hpp"
-#include "glm/gtx/vector_angle.hpp"
-#include "json.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/packing.hpp>
+#include <glm/gtc/random.hpp>
+#include <glm/gtx/component_wise.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include <glm/gtx/fast_exponential.hpp>
+#include <glm/gtx/fast_square_root.hpp>
+#include <glm/gtx/vector_angle.hpp>
+#include <json.hpp>
 
 #define BUILTINS_DIR                                                                               \
-    std::string { "../../builtins/" }
+    std::string { "engine/builtins/" }
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include "core/definitions.hpp"
