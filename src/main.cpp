@@ -23,24 +23,22 @@
 
 using namespace mt;
 
-int main(int, char**) {
+int main(int argc, char* argv[]) {
     SDL_Window*   window   = SDL_CreateWindow("Mastertools", 1440, 900, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
     SDL_Texture*  frame    = SDL_CreateTexture(
         renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 1440, 900
     );
 
-    MeshGeometry mesh(
-        "C:/Users/aaror/source/repos/Mastertools/resource/teapot.obj", MeshFormat::OBJ
-    );
+    MeshGeometry  mesh("C:/Users/aaror/projects/Mastertools/resource/cube.obj", MeshFormat::OBJ);
 
     IndexBuffer   ibo(mesh.GetIndices(), mesh.GetIndexCount());
     VertexBuffer  vbo(mesh.GetVertices(), mesh.GetVertexCount(), 4);
     ElementBuffer ebo = { vbo, ibo, new glm::vec4[vbo.GetCount() / vbo.GetPerVertex()] };
 
-    Texture texture = Texture::Load("C:/Users/aaror/source/repos/Mastertools/resource/default.png");
+    Texture texture   = Texture::Load("C:/Users/aaror/projects/Mastertools/resource/default.png");
 
-    u32*    colors  = new u32[mesh.GetIndexCount() / 3];
+    u32*    colors    = new u32[mesh.GetIndexCount() / 3];
     std::srand(std::time(0));
     for (u64 n = 0; n < mesh.GetIndexCount() / 3; ++n)
         colors[n] = glm::linearRand(0xaaaaaaaau, 0xffffffffu);
@@ -97,13 +95,12 @@ int main(int, char**) {
 
         auto vertex_shader = [&transform](void* input) -> glm::vec4 {
             glm::vec4 pos = *(glm::vec4*)input;
-            // std::clog << pos.x << ' ' << pos.y << ' ' << pos.z << ' ' << pos.w << '\n';
             return transform * pos;
         };
 
         auto fragment_shader = [&colors](const glm::vec3& bary, u64 id) -> u32 {
-            return colors[id]; // glm::linearRand(0xaaaaaaaau, 0xffffffffu);
-            // glm::packUnorm4x8(glm::vec4(1.f, bary));
+            // return colors[id];
+            return glm::packUnorm4x8(glm::vec4(1.f, bary));
         };
 
         framebuffer.RenderElements(ebo, std::move(vertex_shader), std::move(fragment_shader));
