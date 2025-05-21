@@ -1,10 +1,13 @@
 #ifndef MT_FRAMEBUFFER_HPP_
 #define MT_FRAMEBUFFER_HPP_
 
-#include "barycentric.hpp"
-#include "buffers/buffer.hpp"
-#include "buffers/ib.hpp"
-#include "mtdefs.hpp"
+#include "../barycentric.hpp"
+#include "../mtdefs.hpp"
+#include "buffer.hpp"
+#include "ib.hpp"
+
+//
+#include "../shader.hpp"
 
 namespace mt {
 
@@ -22,8 +25,7 @@ namespace mt {
 
         ~Framebuffer() = default;
 
-        template <typename V, typename F>
-        void RenderElements(const ElementBuffer& ebo, V&& vertex_shader, F&& fragment_shader);
+        void RenderElements(ElementBuffer& ebo, VertexShaderBase& vs, FragShaderBase& fs);
 
         void RenderLine(const glm::vec4& v0, const glm::vec4& v1, u32 color);
 
@@ -35,7 +37,7 @@ namespace mt {
 
         void               Clear(u32 buffers) {
             if (buffers & BCOLOR) m_color.Memset(0);
-            if (buffers & BDEPTH) m_depth.Memset(~0);
+            if (buffers & BDEPTH) m_depth.Memset(1);
         }
 
         bool wireframe      = false;
@@ -51,21 +53,17 @@ namespace mt {
 
       private:
 
-        template <typename F>
         void RenderTriangle(
-            const glm::vec4& v0, const glm::vec4& v1, const glm::vec4& v2, F&& shader, u64 id,
-            const Barycentric& bary
+            glm::vec4 a, glm::vec4 b, glm::vec4 c, FragShaderBase& fs, const Barycentric& bary
         );
 
-        template <typename F>
         void RenderBottom(
-            const glm::vec4& v0, const glm::vec4& v1, const glm::vec4& v2, F&& shader, u64 id,
+            const glm::vec4& a, const glm::vec4& b, const glm::vec4& c, FragShaderBase& fs,
             const Barycentric& bary
         );
 
-        template <typename F>
         void RenderTop(
-            const glm::vec4& v0, const glm::vec4& v1, const glm::vec4& v2, F&& shader, u64 id,
+            const glm::vec4& a, const glm::vec4& b, const glm::vec4& c, FragShaderBase& fs,
             const Barycentric& bary
         );
     };

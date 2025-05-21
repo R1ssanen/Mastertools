@@ -14,7 +14,7 @@ namespace mt {
       public:
 
         IndexBuffer(const u32* indices, u64 count) : Buffer<u32>(count) {
-            std::memmove(m_data, indices, m_bytes);
+            std::memmove(m_mem.data(), indices, m_bytes);
         }
     };
 
@@ -25,7 +25,6 @@ namespace mt {
     struct ElementBuffer {
         VertexBuffer vbo;
         IndexBuffer  ibo;
-        glm::vec4*   positions;
     };
 
 } // namespace mt

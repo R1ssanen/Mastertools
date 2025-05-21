@@ -1,8 +1,8 @@
 #ifndef MT_VB_HPP_
 #define MT_VB_HPP_
 
-#include <array>
 #include <cstring>
+#include <vector>
 
 #include "../mtdefs.hpp"
 #include "buffer.hpp"
@@ -15,20 +15,25 @@ namespace mt {
 
         VertexBuffer(const f32* data, u64 count, u8 per_vertex)
             : Buffer<f32>(count), m_per_vertex(per_vertex) {
-            std::memmove(m_data, data, m_bytes);
-            m_vertex_stride = per_vertex * m_stride;
+
+            std::memmove(m_mem.data(), data, m_bytes);
+            m_vertex_stride = per_vertex * GetStride();
+            m_transformed   = m_mem;
         }
 
         ~VertexBuffer() = default;
 
-        u32 GetVertexStride(void) const { return m_vertex_stride; }
+        std::vector<f32>& GetTransformed(void) { return m_transformed; }
 
-        u8  GetPerVertex(void) const { return m_per_vertex; }
+        u32               GetVertexStride(void) const { return m_vertex_stride; }
+
+        u8                GetPerVertex(void) const { return m_per_vertex; }
 
       private:
 
-        u32 m_vertex_stride;
-        u8  m_per_vertex;
+        std::vector<f32> m_transformed;
+        u32              m_vertex_stride;
+        u8               m_per_vertex;
     };
 
 } // namespace mt

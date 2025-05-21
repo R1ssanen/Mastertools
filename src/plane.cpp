@@ -29,7 +29,7 @@ namespace mt {
         if (discriminant <= FLT_EPSILON) return false;
 
         f32 t        = (m_d - glm::dot(m_normal, a)) / discriminant;
-        intersection = a + (glm::normalize(line) * t);
+        intersection = a + glm::normalize(line) * t;
         return true;
     }
 

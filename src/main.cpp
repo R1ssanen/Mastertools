@@ -21,37 +21,43 @@
 #include "render.hpp"
 #include "texture.hpp"
 
+//
+#include "shader.hpp"
+
 using namespace mt;
 
 int main(int argc, char* argv[]) {
+
     SDL_Window*   window   = SDL_CreateWindow("Mastertools", 1440, 900, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
     SDL_Texture*  frame    = SDL_CreateTexture(
-        renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 1440, 900
+        renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 1440 / 1, 900 / 1
     );
+    SDL_SetTextureScaleMode(frame, SDL_SCALEMODE_NEAREST);
+
+    Framebuffer   framebuffer(1440 / 1, 900 / 1);
 
     MeshGeometry  mesh("C:/Users/aaror/projects/Mastertools/resource/cube.obj", MeshFormat::OBJ);
 
     IndexBuffer   ibo(mesh.GetIndices(), mesh.GetIndexCount());
     VertexBuffer  vbo(mesh.GetVertices(), mesh.GetVertexCount(), 4);
-    ElementBuffer ebo = { vbo, ibo, new glm::vec4[vbo.GetCount() / vbo.GetPerVertex()] };
+    ElementBuffer ebo    = { vbo, ibo };
 
-    Texture texture   = Texture::Load("C:/Users/aaror/projects/Mastertools/resource/default.png");
-
-    u32*    colors    = new u32[mesh.GetIndexCount() / 3];
+    u32*          colors = new u32[mesh.GetIndexCount() / 3];
     std::srand(std::time(0));
     for (u64 n = 0; n < mesh.GetIndexCount() / 3; ++n)
         colors[n] = glm::linearRand(0xaaaaaaaau, 0xffffffffu);
 
     auto camera = DefaultCamera(1440.f / 900.f);
     camera.SetPosition(glm::vec3(0.f, 0.f, 5.f));
-    camera.SetFarDistance(4.f);
 
-    Framebuffer framebuffer(1440, 900);
+    f32               dt     = 0.f;
+    u64               frames = 0;
+    auto              start  = std::chrono::system_clock::now();
 
-    f32         dt     = 0.f;
-    u64         frames = 0;
-    auto        start  = std::chrono::system_clock::now();
+    StdForwardVertex1 vs;
+    StdForwardFrag1   fs;
+    fs.colors = colors;
 
     for (bool running = true; running; dt += 0.001f, ++frames) {
         SDL_Event event;
@@ -93,17 +99,8 @@ int main(int argc, char* argv[]) {
         glm::mat4 transform =
             projection * view * glm::rotate(glm::mat4(1.f), dt, glm::vec3(0.f, 1.f, 0.f));
 
-        auto vertex_shader = [&transform](void* input) -> glm::vec4 {
-            glm::vec4 pos = *(glm::vec4*)input;
-            return transform * pos;
-        };
-
-        auto fragment_shader = [&colors](const glm::vec3& bary, u64 id) -> u32 {
-            // return colors[id];
-            return glm::packUnorm4x8(glm::vec4(1.f, bary));
-        };
-
-        framebuffer.RenderElements(ebo, std::move(vertex_shader), std::move(fragment_shader));
+        vs.transform = transform;
+        framebuffer.RenderElements(ebo, vs, fs);
 
         SDL_UpdateTexture(
             frame, nullptr, framebuffer.GetColorBuffer().GetData(), int(framebuffer.GetPitch())

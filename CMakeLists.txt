@@ -19,7 +19,7 @@ else ()
 endif ()
 
 target_include_directories (${PROJECT_NAME} PRIVATE "include")
-target_compile_options (${PROJECT_NAME} PRIVATE ${OPTIMIZATIONS} -Wall -Wextra -Wpedantic -Wno-c++98-compat-pedantic)
+target_compile_options (${PROJECT_NAME} PRIVATE ${OPTIMIZATIONS} -Wall -Wextra -Wpedantic)
 
 set_target_properties (${PROJECT_NAME} PROPERTIES
 	VERSION ${PROJECT_VERSION}
