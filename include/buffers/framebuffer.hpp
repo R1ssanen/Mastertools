@@ -40,6 +40,8 @@ namespace mt {
             if (buffers & BDEPTH) m_depth.Memset(1);
         }
 
+        u32* GetData() { return const_cast<u32*>(m_color.GetData()); }
+
         bool wireframe      = false;
         bool cull_backfaces = true;
 

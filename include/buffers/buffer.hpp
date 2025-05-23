@@ -32,6 +32,11 @@ namespace mt {
 
         void         Memset(u32 value) { std::memset(m_mem.data(), value, m_bytes); }
 
+        void         Swap(T* ptr) {
+            T* data = m_mem.data();
+            std::swap(data, ptr);
+        }
+
       protected:
 
         std::vector<T> m_mem;

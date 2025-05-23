@@ -163,8 +163,10 @@ namespace mt {
 namespace mt {
 
     MeshGeometry::MeshGeometry(const std::string& path, MeshFormat format) : m_format(format) {
-        bool uvs_indexed     = false;
-        bool normals_indexed = false;
+        bool             uvs_indexed     = false;
+        bool             normals_indexed = false;
+
+        std::vector<f32> positions;
 
         switch (format) {
 
@@ -179,6 +181,25 @@ namespace mt {
 
         case MeshFormat::INVALID:
         default: std::cerr << "error: unknown mesh geometry format.\n";
+        }
+
+        return;
+        for (u64 i = 0; i < m_indices.size(); i += 3) {
+            f32* offset_positions = positions.data() + m_indices[i] * 4;
+            f32* offset_normals   = m_normals.data() + m_indices[i + 1] * 3;
+            f32* offset_uvs       = m_uvs.data() + m_indices[i + 2] * 2;
+
+            m_vertices.emplace_back(offset_positions[0]);
+            m_vertices.emplace_back(offset_positions[1]);
+            m_vertices.emplace_back(offset_positions[2]);
+            m_vertices.emplace_back(offset_positions[3]);
+
+            m_vertices.emplace_back(offset_normals[0]);
+            m_vertices.emplace_back(offset_normals[1]);
+            m_vertices.emplace_back(offset_normals[2]);
+
+            m_vertices.emplace_back(offset_uvs[0]);
+            m_vertices.emplace_back(offset_uvs[1]);
         }
     }
 

@@ -11,7 +11,7 @@
 
 #define MVATTRIB(type, name, voffset)     type& name = *(type*)(attribs + offset + voffset);
 
-#define MFGETATTRIB(type, vertex, offset) ((type*)attribs[vertex].data())[offset]
+#define MFGETATTRIB(type, vertex, offset) *((type*)(attribs[vertex]) + offset)
 
 #define MFATTRIB(type, name, offset)                                                               \
     inline type name(void) const {                                                                 \
@@ -39,12 +39,12 @@ namespace mt {
     class FragShaderBase {
       public:
 
-        virtual void   operator()(u32& out) const = 0;
+        virtual void operator()(u32& out) const = 0;
 
-        std::span<f32> attribs[3];
-        glm::vec3      barycoord;
-        glm::vec2      pos;
-        u32            id;
+        glm::vec3    barycoord;
+        f32*         attribs[3];
+        u64          loc;
+        u32          id;
     };
 
 } // namespace mt
@@ -67,11 +67,20 @@ namespace mt {
       public:
 
         void operator()(u32& out) const override {
-            // out = colors[id];
-            out = glm::packUnorm4x8(glm::vec4(1.f, barycoord));
+
+            f32& depth = depth_buffer[loc];
+            f32  d     = z();
+            if (depth > d) return;
+
+            depth = d;
+            // out   = glm::packUnorm4x8(glm::vec4(d));
+            out   = glm::packUnorm4x8(glm::vec4(1.f, barycoord));
         }
 
+        MFATTRIB(f32, z, 2)
+
         u32*         colors;
+        f32*         depth_buffer;
         Buffer<f32>* db;
     };
 
