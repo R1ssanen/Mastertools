@@ -27,7 +27,7 @@ namespace mt {
 
         void RenderElements(ElementBuffer& ebo, VertexShaderBase& vs, FragShaderBase& fs);
 
-        void RenderLine(const glm::vec4& v0, const glm::vec4& v1, u32 color);
+        void RenderLine(u32 x0, u32 y0, u32 x1, u32 y1, u32 color);
 
         const Buffer<u32>& GetColorBuffer(void) const { return m_color; }
 
@@ -37,7 +37,7 @@ namespace mt {
 
         void               Clear(u32 buffers) {
             if (buffers & BCOLOR) m_color.Memset(0);
-            if (buffers & BDEPTH) m_depth.Memset(1);
+            if (buffers & BDEPTH) m_depth.Memset(0.f);
         }
 
         u32* GetData() { return const_cast<u32*>(m_color.GetData()); }
@@ -56,17 +56,7 @@ namespace mt {
       private:
 
         void RenderTriangle(
-            glm::vec4 a, glm::vec4 b, glm::vec4 c, FragShaderBase& fs, const Barycentric& bary
-        );
-
-        void RenderBottom(
-            const glm::vec4& a, const glm::vec4& b, const glm::vec4& c, FragShaderBase& fs,
-            const Barycentric& bary
-        );
-
-        void RenderTop(
-            const glm::vec4& a, const glm::vec4& b, const glm::vec4& c, FragShaderBase& fs,
-            const Barycentric& bary
+            glm::vec4 p0, glm::vec4 p1, glm::vec4 p2, FragShaderBase& frag, const Barycentric& bary
         );
     };
 

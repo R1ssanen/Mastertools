@@ -30,7 +30,7 @@ namespace mt {
 
         constexpr u8 GetStride(void) const { return sizeof(T); }
 
-        void         Memset(u32 value) { std::memset(m_mem.data(), value, m_bytes); }
+        void         Memset(T value) { std::fill(m_mem.begin(), m_mem.end(), value); }
 
         void         Swap(T* ptr) {
             T* data = m_mem.data();

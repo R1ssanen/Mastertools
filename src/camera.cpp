@@ -3,14 +3,33 @@
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/quaternion_float.hpp>
 #include <glm/ext/vector_float3.hpp>
+#include <iostream>
 
 #include "mtdefs.hpp"
 
 namespace mt {
 
-    /*BaseCamera::BaseCamera(
+    void BaseCamera::SetQuaternion(const glm::quat& quat) { m_quat = quat; }
+
+    void BaseCamera::SetPosition(const glm::vec3& pos) { m_pos = pos; }
+
+    void BaseCamera::SetNearDistance(f32 near) { m_near = near; }
+
+    void BaseCamera::SetFarDistance(f32 far) { m_far = far; }
+
+    void BaseCamera::SetFieldOfView(f32 fov) { m_fov = fov; }
+
+    void BaseCamera::SetAspectRatio(f32 aspect_ratio) { m_aspect = aspect_ratio; }
+
+} // namespace mt
+
+namespace mt {
+
+    DefaultCamera::DefaultCamera(
         const glm::vec3& pos, const glm::vec3& forward, f32 near, f32 far, f32 fov, f32 aspect_ratio
-    ) {
+    )
+        : BaseCamera(pos, near, far, fov, aspect_ratio), m_view(m_CreateViewMatrix()),
+          m_projection(m_CreateProjectionMatrix()) {
         m_near                 = near;
         m_far                  = far;
         m_fov                  = glm::radians(fov);
@@ -32,32 +51,13 @@ namespace mt {
         auto      bottom_left  = pos + plane_front - plane_right - plane_up;
         auto      bottom_right = pos + plane_front + plane_right - plane_up;
 
-        m_near_plane           = Plane(pos + front * near, front);
-        m_frustum[0]           = Plane(pos, top_left, top_right);
-        m_frustum[1]           = Plane(pos, bottom_left, bottom_right);
-        m_frustum[2]           = Plane(pos, top_left, bottom_left);
-        m_frustum[3]           = Plane(pos, top_right, bottom_right);
-        m_frustum[4]           = Plane(pos + front * far, front * -1.f);
-
-        m_mat_view             = glm::lookAtRH(pos, front, up);
-        m_mat_projection       = glm::perspectiveRH(m_fov, aspect_ratio, near, far);
-    }*/
-
-    void BaseCamera::SetQuaternion(const glm::quat& quat) { m_quat = quat; }
-
-    void BaseCamera::SetPosition(const glm::vec3& pos) { m_pos = pos; }
-
-    void BaseCamera::SetNearDistance(f32 near) { m_near = near; }
-
-    void BaseCamera::SetFarDistance(f32 far) { m_far = far; }
-
-    void BaseCamera::SetFieldOfView(f32 fov) { m_fov = fov; }
-
-    void BaseCamera::SetAspectRatio(f32 aspect_ratio) { m_aspect = aspect_ratio; }
-
-} // namespace mt
-
-namespace mt {
+        m_frustum.emplace_back(pos + front * near, front);
+        m_frustum.emplace_back(pos, top_left, top_right);
+        m_frustum.emplace_back(pos, bottom_left, bottom_right);
+        m_frustum.emplace_back(pos, top_left, bottom_left);
+        m_frustum.emplace_back(pos, top_right, bottom_right);
+        m_frustum.emplace_back(pos + front * far, front * -1.f);
+    }
 
     void DefaultCamera::SetQuaternion(const glm::quat& quat) {
         m_quat = quat;

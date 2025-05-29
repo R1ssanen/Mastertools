@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "mtdefs.hpp"
+#include "plane.hpp"
 
 namespace mt {
 
@@ -42,12 +43,9 @@ namespace mt {
 
       protected:
 
-        BaseCamera(
-            const glm::quat& quat, const glm::vec3& pos, f32 near, f32 far, f32 fov,
-            f32 aspect_ratio
-        )
-            : m_quat(quat), m_pos(pos), m_near(near), m_far(far), m_fov(glm::radians(fov)),
-              m_aspect(aspect_ratio) { }
+        BaseCamera(const glm::vec3& pos, f32 near, f32 far, f32 fov, f32 aspect_ratio)
+            : m_quat(glm::angleAxis(glm::half_pi<float>(), glm::vec3(0.f, 0.f, -1.f))), m_pos(pos),
+              m_near(near), m_far(far), m_fov(glm::radians(fov)), m_aspect(aspect_ratio) { }
 
         glm::quat m_quat;
         glm::vec3 m_pos;
@@ -65,13 +63,10 @@ namespace mt {
       public:
 
         DefaultCamera(
-            f32              aspect_ratio,
-            const glm::quat& quat =
-                glm::angleAxis(glm::half_pi<float>(), glm::vec3(0.f, 0.f, -1.f)),
-            const glm::vec3& pos = glm::vec3(0.f), f32 near = 0.01f, f32 far = 100.f, f32 fov = 90.f
-        )
-            : BaseCamera(quat, pos, near, far, fov, aspect_ratio), m_view(m_CreateViewMatrix()),
-              m_projection(m_CreateProjectionMatrix()) { }
+            const glm::vec3& pos     = glm::vec3(0.f),
+            const glm::vec3& forward = glm::vec3(0.f, 0.f, -1.f), f32 near = 0.01f, f32 far = 100.f,
+            f32 fov = 90.f, f32 aspect_ratio = 1440.f / 900.f
+        );
 
         const glm::mat4& GetViewMatrix(void) const override;
 
@@ -91,9 +86,9 @@ namespace mt {
 
       protected:
 
-        glm::mat4 m_view;
-        glm::mat4 m_projection;
-        // std::unordered_map<std::string, Plane> m_frustum;
+        std::vector<Plane> m_frustum;
+        glm::mat4          m_view;
+        glm::mat4          m_projection;
 
       private:
 

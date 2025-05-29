@@ -1,7 +1,7 @@
 #ifndef MT_BARYCENTRIC_HPP_
 #define MT_BARYCENTRIC_HPP_
 
-#include <glm/mat3x3.hpp>
+#include <glm/vec3.hpp>
 #include <tuple>
 
 #include "mtdefs.hpp"
@@ -26,34 +26,23 @@ namespace mt {
                 if (skip_if_backface) return;
             }
 
-            m_mat = glm::mat3(
+            m_inv_area_2 = 1.f / det;
+            m_mat        = glm::mat3(
                 { b.x * c.y - c.x * b.y, b.y - c.y, c.x - b.x },
                 { c.x * a.y - a.x * c.y, c.y - a.y, a.x - c.x },
                 { a.x * b.y - b.x * a.y, a.y - b.y, b.x - a.x }
             );
 
-            m_inv_area_2 = 1.f / det;
-
-            m_dx0        = (b.y - c.y) * m_inv_area_2;
-            m_dx1        = (c.y - a.y) * m_inv_area_2;
-            m_dx2        = (a.y - b.y) * m_inv_area_2;
-
-            m_dy0        = (c.x - b.x) * m_inv_area_2;
-            m_dy1        = (a.x - c.x) * m_inv_area_2;
-            m_dy2        = (b.x - a.x) * m_inv_area_2;
+            m_dx = glm::vec3(b.y - c.y, c.y - a.y, a.y - b.y) * m_inv_area_2;
+            m_dy = glm::vec3(c.x - b.x, a.x - c.x, b.x - a.x) * m_inv_area_2;
         }
 
-        auto GetDeltaX(void) const { return std::make_tuple(m_dx0, m_dx1, m_dx2); }
+        glm::vec3 GetDeltaX(void) const noexcept { return m_dx; }
 
-        auto GetDeltaY(f32 slope) const {
-            return std::make_tuple(
-                slope * m_dx0 + m_dy0, slope * m_dx1 + m_dy1, slope * m_dx2 + m_dy2
-            );
-        }
+        glm::vec3 GetDeltaY(f32 slope) const noexcept { return m_dy + slope * m_dx; }
 
-        auto GetCoord(f32 x, f32 y) const {
-            auto bc = m_inv_area_2 * glm::vec3(1.f, x, y) * m_mat;
-            return std::make_tuple(bc.x, bc.y, bc.z);
+        glm::vec3 GetCoord(f32 x, f32 y) const noexcept {
+            return m_inv_area_2 * glm::vec3(1.f, x, y) * m_mat;
         }
 
         bool is_backface = false;
@@ -62,8 +51,8 @@ namespace mt {
       private:
 
         glm::mat3 m_mat;
-        f32       m_dx0, m_dx1, m_dx2;
-        f32       m_dy0, m_dy1, m_dy2;
+        glm::vec3 m_dx;
+        glm::vec3 m_dy;
         f32       m_inv_area_2;
     };
 

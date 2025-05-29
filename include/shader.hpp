@@ -42,6 +42,7 @@ namespace mt {
         virtual void operator()(u32& out) const = 0;
 
         glm::vec3    barycoord;
+        glm::vec2    pos;
         f32*         attribs[3];
         u64          loc;
         u32          id;
@@ -56,7 +57,10 @@ namespace mt {
     class StdForwardVertex1 : public VertexShaderBase {
       public:
 
-        void       operator()() override { pos() = transform * pos(); }
+        void operator()() override {
+            //
+            pos() = transform * pos();
+        }
 
         glm::vec4& pos() { return *(glm::vec4*)(attribs + offset); }
 
@@ -68,20 +72,30 @@ namespace mt {
 
         void operator()(u32& out) const override {
 
-            f32& depth = depth_buffer[loc];
-            f32  d     = z();
-            if (depth > d) return;
+            /*if (out != 0) {
+                auto c = (u8*)(&out);
+                c[1]   = 0;
+                c[2]   = 0;
+                c[3]   = std::min(c[3] + 20, 0xff);
+                return;
+            }*/
 
-            depth = d;
-            // out   = glm::packUnorm4x8(glm::vec4(d));
-            out   = glm::packUnorm4x8(glm::vec4(1.f, barycoord));
+            f32  d      = z();
+            f32& d_curr = depth_buffer[loc];
+
+            if (d_curr > d) return;
+            else
+                d_curr = d;
+
+            out = id;
+            // out = glm::packUnorm4x8(glm::vec4(1.f, d, d, d));
+            // out = glm::packUnorm4x8(glm::vec4(1.f, barycoord));
         }
 
         MFATTRIB(f32, z, 2)
 
-        u32*         colors;
-        f32*         depth_buffer;
-        Buffer<f32>* db;
+        f32* depth_buffer;
+        u32  width, height;
     };
 
 } // namespace mt

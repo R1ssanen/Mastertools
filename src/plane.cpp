@@ -15,8 +15,6 @@ namespace mt {
     }
 
     Plane::Plane(const glm::vec3& pos, const glm::vec3& normal) {
-        assert(glm::length(normal) >= 1 + FLT_EPSILON);
-
         m_normal = normal;
         m_d      = -glm::dot(pos, normal);
     }
@@ -26,7 +24,7 @@ namespace mt {
         glm::vec3 line         = b - a;
 
         f32       discriminant = glm::dot(m_normal, line);
-        if (discriminant <= FLT_EPSILON) return false;
+        if (discriminant == 0.f) return false;
 
         f32 t        = (m_d - glm::dot(m_normal, a)) / discriminant;
         intersection = a + glm::normalize(line) * t;

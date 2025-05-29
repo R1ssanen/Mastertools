@@ -2,11 +2,11 @@
 #include <chrono>
 #include <cstring>
 #include <format>
-#include <glm/ext/matrix_float4x4.hpp>
-#include <glm/ext/vector_float4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/random.hpp>
+#include <glm/mat4x4.hpp>
 #include <glm/packing.hpp>
+#include <glm/vec4.hpp>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
@@ -19,16 +19,10 @@
 #include "loader.hpp"
 #include "mtdefs.hpp"
 #include "render.hpp"
+#include "shader.hpp"
 #include "texture.hpp"
 
-//
-#include "shader.hpp"
-
-//
-#include <barrier>
-#include <condition_variable>
-#include <mutex>
-#include <thread>
+#define KEY_EVENT(code) (e.type == SDL_EVENT_KEY_DOWN && e.key.key == code)
 
 using namespace mt;
 
@@ -36,7 +30,7 @@ int main(int argc, char* argv[]) {
     srand(time(0));
 
     u64           width = 1440, height = 900;
-    u64           resx = width / 3, resy = height / 3;
+    u64           resx = 640, resy = 480; // width / 2, resy = height / 2;
 
     SDL_Window*   window   = SDL_CreateWindow("Mastertools", width, height, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
@@ -44,18 +38,20 @@ int main(int argc, char* argv[]) {
         renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, resx, resy
     );
     SDL_SetTextureScaleMode(frame, SDL_SCALEMODE_NEAREST);
+    SDL_SetTextureBlendMode(frame, SDL_BLENDMODE_NONE);
 
     std::chrono::nanoseconds time_elapsed(0);
     bool                     running = true;
 
     // render variables
-    Framebuffer       framebuffer(resx, resy);
-    DefaultCamera     camera(resx / f32(resy));
+    Framebuffer   framebuffer(resx, resy);
+    DefaultCamera camera;
 
-    MeshGeometry      mesh("resource/teapot.obj", MeshFormat::OBJ);
-    glm::vec3         model_pos     = { 0.f, -1.f, -2.5f };
-    glm::vec3         model_scale   = { 0.5f, 0.5f, 0.5f };
-    glm::vec3         rotation_axis = glm::sphericalRand(1.f);
+    MeshGeometry  mesh("resource/teapot.obj", MeshFormat::OBJ);
+    glm::vec3     model_pos     = { 0.f, -1.f, -2.f };
+    glm::vec3     model_scale   = { 0.5f, 0.5f, 0.5f };
+    glm::vec3     rotation_axis = { 0.f, 1.f, 0.f };
+    // glm::vec3         rotation_axis = glm::sphericalRand(1.f);
 
     IndexBuffer       ibo(mesh.GetIndices(), mesh.GetIndexCount());
     VertexBuffer      vbo(mesh.GetVertices(), mesh.GetVertexCount(), 4);
@@ -63,6 +59,8 @@ int main(int argc, char* argv[]) {
 
     StdForwardVertex1 vs;
     StdForwardFrag1   fs;
+    fs.width = resx, fs.height = resy;
+    fs.depth_buffer = const_cast<f32*>(framebuffer.GetDepthBuffer().GetData());
 
     for (f32 frames = 1, dt = 0.f; running; ++frames, dt += 0.001f) {
         auto      time_frame_start = std::chrono::system_clock::now();
@@ -70,7 +68,12 @@ int main(int argc, char* argv[]) {
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_EVENT_QUIT) running = false;
-            if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_Q) running = false;
+            if KEY_EVENT (SDLK_Q) running = false;
+            if KEY_EVENT (SDLK_RETURN) framebuffer.wireframe = !framebuffer.wireframe;
+            if KEY_EVENT (SDLK_S)
+                camera.SetPosition(camera.GetPosition() + glm::vec3(0.f, 0.f, 0.1f));
+            if KEY_EVENT (SDLK_W)
+                camera.SetPosition(camera.GetPosition() - glm::vec3(0.f, 0.f, 0.1f));
         }
 
         glm::mat4 rotate     = glm::rotate(glm::mat4(1.f), dt, rotation_axis);
@@ -83,7 +86,6 @@ int main(int argc, char* argv[]) {
         glm::mat4 transform  = projection * view * model;
 
         vs.transform         = transform;
-        fs.depth_buffer      = const_cast<f32*>(framebuffer.GetDepthBuffer().GetData());
         framebuffer.RenderElements(ebo, vs, fs);
 
         SDL_UpdateTexture(frame, nullptr, framebuffer.GetData(), framebuffer.GetPitch());
@@ -94,11 +96,12 @@ int main(int argc, char* argv[]) {
             renderer, 20, 20,
             std::format("render: {}ms", time_elapsed.count() / frames / 1E6).c_str()
         );
-        SDL_SetRenderDrawColorFloat(renderer, 0.f, 0.f, 0.f, 0.f);
+        SDL_SetRenderDrawColorFloat(renderer, 0.f, 0.f, 0.f, 1.f);
 
         SDL_RenderPresent(renderer);
         SDL_RenderClear(renderer);
-        framebuffer.Clear(BCOLOR | BDEPTH);
+        framebuffer.Clear(BCOLOR);
+        std::fill_n(fs.depth_buffer, resx * resy, 0.f);
 
         time_elapsed += std::chrono::system_clock::now() - time_frame_start;
     }
