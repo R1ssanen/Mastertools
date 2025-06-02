@@ -29,7 +29,7 @@ using namespace mt;
 int main(int argc, char* argv[]) {
     srand(time(0));
 
-    u64           width = 1440, height = 900;
+    u64           width = 1920, height = 1080;
     u64           resx = width / 3, resy = height / 3;
 
     SDL_Window*   window   = SDL_CreateWindow("Mastertools", width, height, SDL_WINDOW_RESIZABLE);
@@ -48,10 +48,11 @@ int main(int argc, char* argv[]) {
     DefaultCamera camera;
     camera.SetFieldOfView(100.f);
 
-    MeshGeometry      mesh("resource/cube.obj", MeshFormat::OBJ);
-    glm::vec3         model_pos     = { 0.f, 0.f, -0.01f };
-    glm::vec3         model_scale   = { 1.f, 1.f, 1.f };
-    glm::vec3         rotation_axis = { 0.f, 1.f, 0.f };
+    MeshGeometry mesh("resource/cube.obj", MeshFormat::OBJ);
+    glm::vec3    model_pos     = { 0.f, 0.f, 0.f };
+    glm::vec3    model_scale   = { 1.f, 1.f, 1.f };
+    glm::vec3    rotation_axis = { 0.f, 1.f, 0.f };
+    rotation_axis              = glm::sphericalRand(1.f);
 
     VertexBuffer      vbo(mesh.GetVertices(), mesh.GetVertexCount(), 4);
     IndexBuffer       ibo(mesh.GetIndices(), mesh.GetIndexCount());
@@ -59,7 +60,8 @@ int main(int argc, char* argv[]) {
 
     StdForwardVertex1 vs;
     StdForwardFrag1   fs;
-    fs.depth_buffer     = const_cast<f32*>(framebuffer.GetDepthBuffer().GetData());
+    fs.depth_buffer = const_cast<f32*>(framebuffer.GetDepthBuffer().GetData());
+    fs.width = resx, fs.height = resy;
 
     f32  frames         = 1;
     bool rotate         = false;
@@ -67,10 +69,12 @@ int main(int argc, char* argv[]) {
     SDL_SetWindowRelativeMouseMode(window, true);
 
     cubemap_texture_t cubemap = {
-        Texture::Load("resource/cubemap_1/posx.jpg"), Texture::Load("resource/cubemap_1/negx.jpg"),
-        Texture::Load("resource/cubemap_1/posy.jpg"), Texture::Load("resource/cubemap_1/negy.jpg"),
-        Texture::Load("resource/cubemap_1/posz.jpg"), Texture::Load("resource/cubemap_1/negz.jpg")
+        Texture::Load("resource/cubemap_1/px.png"), Texture::Load("resource/cubemap_1/nx.png"),
+        Texture::Load("resource/cubemap_1/py.png"), Texture::Load("resource/cubemap_1/ny.png"),
+        Texture::Load("resource/cubemap_1/pz.png"), Texture::Load("resource/cubemap_1/nz.png")
     };
+
+    fs.cubemap = &cubemap;
 
     for (f32 dt = 0.f; running; ++frames, dt += rotate ? 0.001f : 0.f) {
         auto      time_frame_start = std::chrono::system_clock::now();
@@ -108,18 +112,23 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        glm::mat4 rotate     = glm::rotate(glm::mat4(1.f), dt, rotation_axis);
-        glm::mat4 translate  = glm::translate(glm::mat4(1.f), model_pos);
-        glm::mat4 scale      = glm::scale(glm::mat4(1.f), model_scale);
-        glm::mat4 model      = translate * rotate * scale; // * glm::inverse(translate);
+        glm::mat4 rotate              = glm::rotate(glm::mat4(1.f), dt, rotation_axis);
+        glm::mat4 translate           = glm::translate(glm::mat4(1.f), model_pos);
+        glm::mat4 scale               = glm::scale(glm::mat4(1.f), model_scale);
+        glm::mat4 model               = translate * rotate * scale; // * glm::inverse(translate);
 
-        glm::mat4 view       = camera.GetViewMatrix();
-        glm::mat4 projection = camera.GetProjectionMatrix();
-        glm::mat4 transform  = projection * view * model;
+        glm::mat4 view                = camera.GetViewMatrix();
+        glm::mat4 projection          = camera.GetProjectionMatrix();
+        glm::mat4 transform           = projection * view * model;
 
-        vs.transform         = transform;
+        glm::mat4 view_no_translation = view;
+        view_no_translation[3]        = glm::vec4(0.f, 0.f, 0.f, 1.f);
+        fs.inv_view_proj              = glm::inverse(projection * view_no_translation);
+
+        vs.transform                  = transform;
+        framebuffer.RenderElements(ebo, vs, fs);
+
         framebuffer.render_cubemap_fullscreen(projection, view, cubemap);
-        // framebuffer.RenderElements(ebo, vs, fs);
 
         SDL_UpdateTexture(frame, nullptr, framebuffer.GetData(), framebuffer.GetPitch());
         SDL_RenderTexture(renderer, frame, nullptr, nullptr);

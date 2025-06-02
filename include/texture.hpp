@@ -39,6 +39,12 @@ namespace mt {
 
                 std::swap(data, tmp);
                 free(tmp);
+
+            } else {
+                for (u64 i = 0; i < width * height * sizeof(u32); i += 4) {
+                    std::swap(data[i], data[i + 3]);
+                    std::swap(data[i + 1], data[i + 2]);
+                }
             }
 
             std::clog << "Channels loaded for texture '" << path << "': " << channels << '\n';
@@ -83,7 +89,7 @@ namespace mt {
         glm::vec3 abs_d = glm::abs(d);
 
         if (abs_d.x > abs_d.y && abs_d.x > abs_d.z) {
-            f32 inv_x_half = 0.5f / d.x;
+            f32 inv_x_half = 0.5f / (d.x + FLT_EPSILON);
             f32 u          = 0.5f + d.z * inv_x_half;
             f32 v          = 0.5f + d.y * inv_x_half;
 
@@ -92,7 +98,7 @@ namespace mt {
         }
 
         else if (abs_d.y > abs_d.x && abs_d.y > abs_d.z) {
-            f32 inv_y_half = 0.5f / d.y;
+            f32 inv_y_half = 0.5f / (d.y + FLT_EPSILON);
             f32 u          = 0.5f + d.x * inv_y_half;
             f32 v          = 0.5f - d.z * inv_y_half;
 
@@ -101,7 +107,7 @@ namespace mt {
         }
 
         else {
-            f32 inv_z_half = 0.5f / d.z;
+            f32 inv_z_half = 0.5f / (d.z + FLT_EPSILON);
             f32 u          = 0.5f - d.x * inv_z_half;
             f32 v          = 0.5f + d.y * inv_z_half;
 
@@ -110,12 +116,13 @@ namespace mt {
         }
     }
 
-    inline glm::vec3 screen_to_world(f32 x, f32 y, f32 w, f32 h, const glm::mat4& inv_view_proj) {
+    inline glm::vec3
+    screen_to_world(f32 x, f32 y, f32 z, f32 w, f32 h, const glm::mat4& inv_view_proj) {
 
         f32       ndc_x = 2.f * x / w - 1.f;
         f32       ndc_y = 2.f * y / h - 1.f;
 
-        glm::vec4 world = inv_view_proj * glm::vec4(ndc_x, ndc_y, 1.f, 1.f);
+        glm::vec4 world = inv_view_proj * glm::vec4(ndc_x, ndc_y, z, 1.f);
         return world / world.w;
     }
 
@@ -123,13 +130,13 @@ namespace mt {
         const glm::mat4& proj, const glm::mat4& view, const cubemap_texture_t& cubemap
     ) {
 
-        glm::mat4 view_no_trans = view;
-        view_no_trans[3]        = glm::vec4(0.f, 0.f, 0.f, 1.f);
-        glm::mat4 inv_view_proj = glm::inverse(proj * view_no_trans);
+        glm::mat4 view_no_translation = view;
+        view_no_translation[3]        = glm::vec4(0.f, 0.f, 0.f, 1.f);
+        glm::mat4 inv_view_proj       = glm::inverse(proj * view_no_translation);
 
-        glm::vec3 d0            = screen_to_world(0, 0, m_width, m_height, inv_view_proj);
-        glm::vec3 slope_d0      = screen_to_world(1, 0, m_width, m_height, inv_view_proj) - d0;
-        glm::vec3 slope_d1      = screen_to_world(0, 1, m_width, m_height, inv_view_proj) - d0;
+        glm::vec3 d0       = screen_to_world(0, 0, 1.f, m_width, m_height, inv_view_proj);
+        glm::vec3 slope_d0 = screen_to_world(1, 0, 1.f, m_width, m_height, inv_view_proj) - d0;
+        glm::vec3 slope_d1 = screen_to_world(0, 1, 1.f, m_width, m_height, inv_view_proj) - d0;
 
         for (u32 y = 0, row = 0; y < m_height; ++y) {
             glm::vec3 d = d0;

@@ -8,6 +8,7 @@
 
 #include "buffers/buffer.hpp"
 #include "mtdefs.hpp"
+#include "texture.hpp"
 
 #define MVATTRIB(type, name, voffset)     type& name = *(type*)(attribs + offset + voffset);
 
@@ -41,8 +42,9 @@ namespace mt {
 
         virtual void operator()(u32& out) const = 0;
 
+        glm::vec3    normal;
         glm::vec3    barycoord;
-        glm::vec2    pos;
+        glm::vec3    pos;
         f32*         attribs[3];
         u64          loc;
         u32          id;
@@ -72,31 +74,19 @@ namespace mt {
 
         void operator()(u32& out) const override {
 
-            /*if (out != 0) {
-                auto c = (u8*)(&out);
-                c[1]   = 0;
-                c[2]   = 0;
-                c[3]   = std::min(c[3] + 20, 0xff);
-                return;
-            }
+            glm::vec3 to    = screen_to_world(pos.x, pos.y, pos.z, width, height, inv_view_proj);
+            glm::vec3 d     = glm::reflect(to, normal);
 
-            f32  d      = z();
-            f32& d_curr = depth_buffer[loc];
-
-            if (d_curr < d) return;
-            else
-                d_curr = d;
-            */
-
-            out = id;
-            // out = glm::packUnorm4x8(glm::vec4(1.f, d, d, d));
-            //  out = glm::packUnorm4x8(glm::vec4(1.f, barycoord));
+            auto [face, uv] = sample_cubemap(d);
+            out             = (*cubemap)[face][uv];
         }
 
         MFATTRIB(f32, z, 2)
 
-        f32* depth_buffer;
-        u32  width, height;
+        glm::mat4          inv_view_proj;
+        cubemap_texture_t* cubemap;
+        f32*               depth_buffer;
+        u32                width, height;
     };
 
 } // namespace mt

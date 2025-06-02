@@ -14,6 +14,7 @@
 #include "buffers/ib.hpp"
 #include "clipping.hpp"
 #include "mtdefs.hpp"
+#include "shader.hpp"
 
 namespace mt {
 
@@ -48,7 +49,7 @@ namespace mt {
 
                     frag.barycoord = b * w;
                     frag.loc       = row + x;
-                    frag.pos       = glm::vec2(x, y);
+                    frag.pos       = glm::vec3(x, y, w);
                     frag(m_color[frag.loc]);
 
                     w += slope_w0;
@@ -140,15 +141,17 @@ namespace mt {
         };
 
         for (u64 id = 0, i = 0; i < ebo.ibo.GetCount(); i += 3, ++id) {
-            frag.id                 = hash(id);
+            frag.id         = hash(id);
 
-            frag.attribs[0]         = transformed + ebo.ibo[i + 0] * elements;
-            frag.attribs[1]         = transformed + ebo.ibo[i + 1] * elements;
-            frag.attribs[2]         = transformed + ebo.ibo[i + 2] * elements;
+            frag.attribs[0] = transformed + ebo.ibo[i + 0] * elements;
+            frag.attribs[1] = transformed + ebo.ibo[i + 1] * elements;
+            frag.attribs[2] = transformed + ebo.ibo[i + 2] * elements;
 
-            auto a                  = *(glm::vec4*)(frag.attribs[0]);
-            auto b                  = *(glm::vec4*)(frag.attribs[1]);
-            auto c                  = *(glm::vec4*)(frag.attribs[2]);
+            auto a          = *(glm::vec4*)(frag.attribs[0]);
+            auto b          = *(glm::vec4*)(frag.attribs[1]);
+            auto c          = *(glm::vec4*)(frag.attribs[2]);
+
+            frag.normal     = glm::normalize(glm::cross(glm::vec3(b - a), glm::vec3(c - a)));
 
             auto postclip_transform = [this](glm::vec4& p) {
                 p.w = 1.f / p.w;

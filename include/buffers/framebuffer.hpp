@@ -7,13 +7,13 @@
 #include "ib.hpp"
 #include "plane.hpp"
 
-//
-#include "../shader.hpp"
-
 namespace mt {
 
     class Texture;
     using cubemap_texture_t = std::array<Texture, 6>;
+
+    class VertexShaderBase;
+    class FragShaderBase;
 
     enum BufferType {
         BCOLOR = 0x0001,
