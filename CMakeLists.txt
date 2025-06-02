@@ -10,6 +10,7 @@ add_executable (${PROJECT_NAME}
 	"src/camera.cpp"
 	"src/plane.cpp"
 	"src/loader.cpp"
+	"src/clipping.cpp"
 )
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")

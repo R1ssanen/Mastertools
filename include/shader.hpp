@@ -58,8 +58,8 @@ namespace mt {
       public:
 
         void operator()() override {
-            //
-            pos() = transform * pos();
+            auto& p = pos();
+            p       = transform * p;
         }
 
         glm::vec4& pos() { return *(glm::vec4*)(attribs + offset); }
@@ -78,18 +78,19 @@ namespace mt {
                 c[2]   = 0;
                 c[3]   = std::min(c[3] + 20, 0xff);
                 return;
-            }*/
+            }
 
             f32  d      = z();
             f32& d_curr = depth_buffer[loc];
 
-            if (d_curr > d) return;
+            if (d_curr < d) return;
             else
                 d_curr = d;
+            */
 
             out = id;
             // out = glm::packUnorm4x8(glm::vec4(1.f, d, d, d));
-            // out = glm::packUnorm4x8(glm::vec4(1.f, barycoord));
+            //  out = glm::packUnorm4x8(glm::vec4(1.f, barycoord));
         }
 
         MFATTRIB(f32, z, 2)

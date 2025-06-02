@@ -9,6 +9,8 @@
 #include <glm/ext/quaternion_float.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/gtc/quaternion.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/euler_angles.hpp>
 #include <iostream>
 
 #include "mtdefs.hpp"
@@ -27,8 +29,6 @@ namespace mt {
 
         virtual const glm::mat4& GetProjectionMatrix(void) const = 0;
 
-        virtual void             SetQuaternion(const glm::quat& quat);
-
         virtual void             SetPosition(const glm::vec3& pos);
 
         inline const glm::vec3&  GetPosition() { return m_pos; }
@@ -44,10 +44,10 @@ namespace mt {
       protected:
 
         BaseCamera(const glm::vec3& pos, f32 near, f32 far, f32 fov, f32 aspect_ratio)
-            : m_quat(glm::angleAxis(glm::half_pi<float>(), glm::vec3(0.f, 0.f, -1.f))), m_pos(pos),
-              m_near(near), m_far(far), m_fov(glm::radians(fov)), m_aspect(aspect_ratio) { }
+            : m_orient(glm::mat4(1.f)), m_pos(pos), m_near(near), m_far(far),
+              m_fov(glm::radians(fov)), m_aspect(aspect_ratio) { }
 
-        glm::quat m_quat;
+        glm::mat4 m_orient;
         glm::vec3 m_pos;
         f32       m_near;
         f32       m_far;
@@ -72,8 +72,6 @@ namespace mt {
 
         const glm::mat4& GetProjectionMatrix(void) const override;
 
-        void             SetQuaternion(const glm::quat& quat) override;
-
         void             SetPosition(const glm::vec3& pos) override;
 
         void             SetNearDistance(f32 near) override;
@@ -84,11 +82,27 @@ namespace mt {
 
         void             SetAspectRatio(f32 aspect_ratio) override;
 
+        void             rotate(f32 dxm, f32 dym) {
+
+            constexpr f32 max_y = glm::radians(89.f);
+            f32           dx    = glm::radians(dxm * 0.5f);
+            f32           dy    = glm::clamp(glm::radians(dym * 0.5f), -max_y, max_y);
+
+            // f32           pitch, yaw, roll;
+            // glm::extractEulerAngleXYZ(m_orient, pitch, yaw, roll);
+            auto pitch  = glm::rotate(glm::mat4(1.f), dy, glm::vec3(1.f, 0.f, 0.f));
+            auto yaw    = glm::rotate(glm::mat4(1.f), -dx, glm::vec3(0.f, 1.f, 0.f));
+
+            auto rotate = pitch * yaw;
+            m_orient    = m_orient * rotate;
+            m_view      = m_CreateViewMatrix();
+        }
+
       protected:
 
-        std::vector<Plane> m_frustum;
-        glm::mat4          m_view;
-        glm::mat4          m_projection;
+        // std::vector<Plane> m_frustum;
+        glm::mat4 m_view;
+        glm::mat4 m_projection;
 
       private:
 

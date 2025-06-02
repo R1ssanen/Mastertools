@@ -9,8 +9,6 @@
 
 namespace mt {
 
-    void BaseCamera::SetQuaternion(const glm::quat& quat) { m_quat = quat; }
-
     void BaseCamera::SetPosition(const glm::vec3& pos) { m_pos = pos; }
 
     void BaseCamera::SetNearDistance(f32 near) { m_near = near; }
@@ -51,17 +49,13 @@ namespace mt {
         auto      bottom_left  = pos + plane_front - plane_right - plane_up;
         auto      bottom_right = pos + plane_front + plane_right - plane_up;
 
-        m_frustum.emplace_back(pos + front * near, front);
+        /*m_frustum.emplace_back(pos + front * near, front);
         m_frustum.emplace_back(pos, top_left, top_right);
         m_frustum.emplace_back(pos, bottom_left, bottom_right);
         m_frustum.emplace_back(pos, top_left, bottom_left);
         m_frustum.emplace_back(pos, top_right, bottom_right);
         m_frustum.emplace_back(pos + front * far, front * -1.f);
-    }
-
-    void DefaultCamera::SetQuaternion(const glm::quat& quat) {
-        m_quat = quat;
-        m_view = m_CreateViewMatrix();
+        */
     }
 
     void DefaultCamera::SetPosition(const glm::vec3& pos) {
@@ -94,7 +88,7 @@ namespace mt {
     const glm::mat4& DefaultCamera::GetProjectionMatrix(void) const { return m_projection; }
 
     glm::mat4        DefaultCamera::m_CreateViewMatrix(void) const {
-        const glm::vec3 look = glm::eulerAngles(m_quat);
+        glm::vec3 look = m_orient * glm::vec4(0.f, 0.f, -1.f, 0.f);
         return glm::lookAtRH(m_pos, m_pos + look, glm::vec3(0.f, 1.f, 0.f));
     }
 

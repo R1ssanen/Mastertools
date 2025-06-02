@@ -133,7 +133,7 @@ namespace mt {
                     }
 #endif
                 }
-                break;
+            } break;
 
             case FNV_1A("vt"): {
                 assert(
@@ -151,7 +151,6 @@ namespace mt {
             } break;
 
             default: continue;
-            }
             }
         }
 
@@ -184,7 +183,8 @@ namespace mt {
         }
 
         return;
-        for (u64 i = 0; i < m_indices.size(); i += 3) {
+
+        /*for (u64 i = 0; i < m_indices.size(); i += 3) {
             f32* offset_positions = positions.data() + m_indices[i] * 4;
             f32* offset_normals   = m_normals.data() + m_indices[i + 1] * 3;
             f32* offset_uvs       = m_uvs.data() + m_indices[i + 2] * 2;
@@ -200,7 +200,7 @@ namespace mt {
 
             m_vertices.emplace_back(offset_uvs[0]);
             m_vertices.emplace_back(offset_uvs[1]);
-        }
+        }*/
     }
 
     const f32* MeshGeometry::GetVertices(void) const { return m_vertices.data(); }
