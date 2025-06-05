@@ -64,7 +64,7 @@ namespace mt {
 
         DefaultCamera(
             const glm::vec3& pos     = glm::vec3(0.f),
-            const glm::vec3& forward = glm::vec3(0.f, 0.f, -1.f), f32 near = 0.01f, f32 far = 100.f,
+            const glm::vec3& forward = glm::vec3(0.f, 0.f, -1.f), f32 near = 0.1f, f32 far = 100.f,
             f32 fov = 90.f, f32 aspect_ratio = 1440.f / 900.f
         );
 
@@ -90,7 +90,7 @@ namespace mt {
 
             // f32           pitch, yaw, roll;
             // glm::extractEulerAngleXYZ(m_orient, pitch, yaw, roll);
-            auto pitch  = glm::rotate(glm::mat4(1.f), dy, glm::vec3(1.f, 0.f, 0.f));
+            auto pitch  = glm::rotate(glm::mat4(1.f), -dy, glm::vec3(1.f, 0.f, 0.f));
             auto yaw    = glm::rotate(glm::mat4(1.f), -dx, glm::vec3(0.f, 1.f, 0.f));
 
             auto rotate = pitch * yaw;

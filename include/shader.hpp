@@ -42,7 +42,8 @@ namespace mt {
 
         virtual void operator()(u32& out) const = 0;
 
-        glm::vec3    normal;
+        glm::mat4    inv_view_proj;
+        glm::vec3    world_normal;
         glm::vec3    barycoord;
         glm::vec3    pos;
         f32*         attribs[3];
@@ -74,19 +75,29 @@ namespace mt {
 
         void operator()(u32& out) const override {
 
-            glm::vec3 to    = screen_to_world(pos.x, pos.y, pos.z, width, height, inv_view_proj);
-            glm::vec3 d     = glm::reflect(to, normal);
+            /*if (out != 0xdeadbeef) {
+                out = 0xff0000ff;
+                return;
+            }*/
 
-            auto [face, uv] = sample_cubemap(d);
-            out             = (*cubemap)[face][uv];
+            /*glm::vec3 world_pos =
+                screen_to_world_no_z(pos.x, pos.y, inv_w_2, inv_h_2, inv_view_proj);
+            glm::vec3 reflection = glm::reflect(world_pos, world_normal);
+            //glm::vec3 refraction = glm::refract(world_pos, world_normal, 1.4f);
+
+            auto [face, uv]      = sample_cubemap(reflection);
+            out                  = (*cubemap)[face][uv];
+            */
+
+            out = id;
+            //  out = glm::packUnorm4x8(glm::vec4(pos.z));
+            //  out = glm::packUnorm4x8(glm::vec4(1.f, barycoord));
         }
 
-        MFATTRIB(f32, z, 2)
-
-        glm::mat4          inv_view_proj;
         cubemap_texture_t* cubemap;
         f32*               depth_buffer;
         u32                width, height;
+        f32                inv_w_2, inv_h_2;
     };
 
 } // namespace mt

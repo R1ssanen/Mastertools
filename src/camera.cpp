@@ -88,12 +88,14 @@ namespace mt {
     const glm::mat4& DefaultCamera::GetProjectionMatrix(void) const { return m_projection; }
 
     glm::mat4        DefaultCamera::m_CreateViewMatrix(void) const {
-        glm::vec3 look = m_orient * glm::vec4(0.f, 0.f, -1.f, 0.f);
+        glm::vec3 look(m_orient * glm::vec4(0.f, 0.f, -1.f, 0.f));
         return glm::lookAtRH(m_pos, m_pos + look, glm::vec3(0.f, 1.f, 0.f));
     }
 
     glm::mat4 DefaultCamera::m_CreateProjectionMatrix(void) const {
-        return glm::perspectiveRH(m_fov, m_aspect, m_near, m_far);
+        return glm::perspectiveRH_ZO(m_fov, m_aspect, m_near, m_far);
+        // reverse-Z mapping, z -> [1, 0]
+        // return glm::perspectiveRH_ZO(m_fov, m_aspect, m_far, m_near);
     }
 
 } // namespace mt

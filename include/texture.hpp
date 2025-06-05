@@ -102,6 +102,7 @@ namespace mt {
             f32 u          = 0.5f + d.x * inv_y_half;
             f32 v          = 0.5f - d.z * inv_y_half;
 
+            // inverted, y-up
             return d.y < 0.f ? std::make_pair(CubemapFace::POSITIVE_Y, glm::vec2(u, v))
                              : std::make_pair(CubemapFace::NEGATIVE_Y, glm::vec2(1.f - u, v));
         }
@@ -117,33 +118,42 @@ namespace mt {
     }
 
     inline glm::vec3
-    screen_to_world(f32 x, f32 y, f32 z, f32 w, f32 h, const glm::mat4& inv_view_proj) {
+    screen_to_world_no_z(f32 x, f32 y, f32 inv_w_2, f32 inv_h_2, const glm::mat4& inv_view_proj) {
 
-        f32       ndc_x = 2.f * x / w - 1.f;
-        f32       ndc_y = 2.f * y / h - 1.f;
+        f32       ndc_x = x * inv_w_2 - 1.f;
+        f32       ndc_y = y * inv_h_2 - 1.f;
 
-        glm::vec4 world = inv_view_proj * glm::vec4(ndc_x, ndc_y, z, 1.f);
-        return world / world.w;
+        glm::vec4 world = inv_view_proj * glm::vec4(ndc_x, ndc_y, 1.f, 1.f);
+        return glm::vec3(world) / world.w;
+    }
+
+    inline glm::vec3 clip_to_world(const glm::vec4& clip, const glm::mat4& inv_view_proj) {
+        glm::vec4 world = inv_view_proj * clip;
+        return glm::vec3(world) / world.w;
     }
 
     void Framebuffer::render_cubemap_fullscreen(
         const glm::mat4& proj, const glm::mat4& view, const cubemap_texture_t& cubemap
     ) {
 
+        f32       inv_w_2             = 2.f / m_width;
+        f32       inv_h_2             = 2.f / m_height;
+
         glm::mat4 view_no_translation = view;
         view_no_translation[3]        = glm::vec4(0.f, 0.f, 0.f, 1.f);
         glm::mat4 inv_view_proj       = glm::inverse(proj * view_no_translation);
 
-        glm::vec3 d0       = screen_to_world(0, 0, 1.f, m_width, m_height, inv_view_proj);
-        glm::vec3 slope_d0 = screen_to_world(1, 0, 1.f, m_width, m_height, inv_view_proj) - d0;
-        glm::vec3 slope_d1 = screen_to_world(0, 1, 1.f, m_width, m_height, inv_view_proj) - d0;
+        glm::vec3 d0                  = screen_to_world_no_z(0, 0, inv_w_2, inv_h_2, inv_view_proj);
+        glm::vec3 slope_d0 = screen_to_world_no_z(1, 0, inv_w_2, inv_h_2, inv_view_proj) - d0;
+        glm::vec3 slope_d1 = screen_to_world_no_z(0, 1, inv_w_2, inv_h_2, inv_view_proj) - d0;
 
         for (u32 y = 0, row = 0; y < m_height; ++y) {
             glm::vec3 d = d0;
 
             for (u32 x = 0; x < m_width; ++x) {
 
-                u32& under = m_color[row + u32(x)];
+                u32& under = m_color[row + x];
+
                 if (under == 0xdeadbeef) {
                     auto [face, uv] = sample_cubemap(d);
                     under           = cubemap[face][uv];

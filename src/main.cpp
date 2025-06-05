@@ -46,9 +46,9 @@ int main(int argc, char* argv[]) {
     // render variables
     Framebuffer   framebuffer(resx, resy);
     DefaultCamera camera;
-    camera.SetFieldOfView(100.f);
+    camera.SetFarDistance(10.f);
 
-    MeshGeometry mesh("resource/cube.obj", MeshFormat::OBJ);
+    MeshGeometry mesh("resource/cornell_box.obj", MeshFormat::OBJ);
     glm::vec3    model_pos     = { 0.f, 0.f, 0.f };
     glm::vec3    model_scale   = { 1.f, 1.f, 1.f };
     glm::vec3    rotation_axis = { 0.f, 1.f, 0.f };
@@ -62,6 +62,7 @@ int main(int argc, char* argv[]) {
     StdForwardFrag1   fs;
     fs.depth_buffer = const_cast<f32*>(framebuffer.GetDepthBuffer().GetData());
     fs.width = resx, fs.height = resy;
+    fs.inv_w_2 = 2.f / resx, fs.inv_h_2 = 2.f / resy;
 
     f32  frames         = 1;
     bool rotate         = false;
@@ -112,38 +113,37 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        glm::mat4 rotate              = glm::rotate(glm::mat4(1.f), dt, rotation_axis);
-        glm::mat4 translate           = glm::translate(glm::mat4(1.f), model_pos);
-        glm::mat4 scale               = glm::scale(glm::mat4(1.f), model_scale);
-        glm::mat4 model               = translate * rotate * scale; // * glm::inverse(translate);
+        glm::mat4 rotate    = glm::rotate(glm::mat4(1.f), dt, rotation_axis);
+        glm::mat4 translate = glm::translate(glm::mat4(1.f), model_pos);
+        glm::mat4 scale     = glm::scale(glm::mat4(1.f), model_scale);
+        glm::mat4 model     = translate * rotate * scale;
 
-        glm::mat4 view                = camera.GetViewMatrix();
-        glm::mat4 projection          = camera.GetProjectionMatrix();
-        glm::mat4 transform           = projection * view * model;
+        glm::mat4 view      = camera.GetViewMatrix();
+        glm::mat4 proj      = camera.GetProjectionMatrix();
+        glm::mat4 transform = proj * view * model;
 
-        glm::mat4 view_no_translation = view;
-        view_no_translation[3]        = glm::vec4(0.f, 0.f, 0.f, 1.f);
-        fs.inv_view_proj              = glm::inverse(projection * view_no_translation);
+        fs.inv_view_proj    = glm::inverse(proj * view);
 
-        vs.transform                  = transform;
-        framebuffer.RenderElements(ebo, vs, fs);
+        vs.transform        = transform;
+        framebuffer.render_elements(ebo, vs, fs);
 
-        framebuffer.render_cubemap_fullscreen(projection, view, cubemap);
+        // framebuffer.render_cubemap_fullscreen(proj, view, cubemap);
 
-        SDL_UpdateTexture(frame, nullptr, framebuffer.GetData(), framebuffer.GetPitch());
-        SDL_RenderTexture(renderer, frame, nullptr, nullptr);
+        { // SDL side
+            SDL_UpdateTexture(frame, nullptr, framebuffer.GetData(), framebuffer.GetPitch());
+            SDL_RenderTexture(renderer, frame, nullptr, nullptr);
 
-        SDL_SetRenderDrawColorFloat(renderer, 1.f, 1.f, 1.f, 1.f);
-        SDL_RenderDebugText(
-            renderer, 20, 20,
-            std::format("render: {}ms", time_elapsed.count() / frames / 1E6f).c_str()
-        );
-        SDL_SetRenderDrawColorFloat(renderer, 0.f, 0.f, 0.f, 1.f);
+            SDL_SetRenderDrawColorFloat(renderer, 1.f, 1.f, 1.f, 1.f);
+            SDL_RenderDebugText(
+                renderer, 20, 20,
+                std::format("render: {}ms", time_elapsed.count() / frames / 1E6f).c_str()
+            );
+            SDL_SetRenderDrawColorFloat(renderer, 0.f, 0.f, 0.f, 1.f);
 
-        SDL_RenderPresent(renderer);
-        // SDL_RenderClear(renderer);
+            SDL_RenderPresent(renderer);
+        }
+
         framebuffer.Clear(BCOLOR | BDEPTH);
-
         time_elapsed += std::chrono::system_clock::now() - time_frame_start;
     }
 
