@@ -97,7 +97,6 @@ namespace mt {
                     glm::vec3 term = b / w;
                     frag.barycoord = term / (term.x + term.y + term.z);
                     frag.pos.z     = glm::dot(frag.barycoord, z_pack);
-                    frag.pos.z     = (0.1f * 50.f / (50.f - (50.f - 0.1f) * frag.pos.z)) / 50.f;
 
                     frag.loc       = row + u32(x);
                     // frag.pos.z = z / w;
@@ -150,16 +149,16 @@ namespace mt {
 namespace mt {
 
     void Framebuffer::render_elements(
-        ElementBuffer& ebo, VertexShaderBase& vertex, FragShaderBase& frag
+        VertexBuffer& vbo, IndexBuffer& ibo, VertexShaderBase& vertex, FragShaderBase& frag
     ) {
 
-        u32  elements    = ebo.vbo.GetPerVertex();
-        f32* transformed = ebo.vbo.GetTransformed().data();
+        u32  elements    = vbo.GetPerVertex();
+        f32* transformed = vbo.GetTransformed().data();
 
-        std::memmove(transformed, ebo.vbo.GetData(), ebo.vbo.GetCount() * sizeof(f32));
+        std::memmove(transformed, vbo.GetData(), vbo.GetCount() * sizeof(f32));
         vertex.attribs = transformed;
 
-        for (vertex.offset = 0, vertex.id = 0; vertex.id < ebo.vbo.GetCount() / elements;
+        for (vertex.offset = 0, vertex.id = 0; vertex.id < vbo.GetCount() / elements;
              ++vertex.id, vertex.offset += elements) {
             vertex();
         }
@@ -173,12 +172,12 @@ namespace mt {
             return x;
         };
 
-        for (u64 id = 0, i = 0; i < ebo.ibo.GetCount(); i += 3, ++id) {
+        for (u64 id = 0, i = 0; i < ibo.GetCount(); i += 3, ++id) {
             frag.id           = hash(id) | 0x3813daff;
 
-            frag.attribs[0]   = transformed + ebo.ibo[i + 0] * elements;
-            frag.attribs[1]   = transformed + ebo.ibo[i + 1] * elements;
-            frag.attribs[2]   = transformed + ebo.ibo[i + 2] * elements;
+            frag.attribs[0]   = transformed + ibo[i + 0] * elements;
+            frag.attribs[1]   = transformed + ibo[i + 1] * elements;
+            frag.attribs[2]   = transformed + ibo[i + 2] * elements;
 
             auto p0           = *(glm::vec4*)(frag.attribs[0]);
             auto p1           = *(glm::vec4*)(frag.attribs[1]);

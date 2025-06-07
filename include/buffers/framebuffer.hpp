@@ -34,7 +34,9 @@ namespace mt {
 
         ~Framebuffer() = default;
 
-        void render_elements(ElementBuffer& ebo, VertexShaderBase& vs, FragShaderBase& fs);
+        void render_elements(
+            VertexBuffer& vbo, IndexBuffer& ibo, VertexShaderBase& vs, FragShaderBase& fs
+        );
 
         void render_line(u32 x0, u32 y0, u32 x1, u32 y1, u32 color);
 

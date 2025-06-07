@@ -20,13 +20,4 @@ namespace mt {
 
 } // namespace mt
 
-namespace mt {
-
-    struct ElementBuffer {
-        VertexBuffer vbo;
-        IndexBuffer  ibo;
-    };
-
-} // namespace mt
-
 #endif
