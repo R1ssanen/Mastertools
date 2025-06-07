@@ -88,8 +88,7 @@ namespace mt {
     const glm::mat4& DefaultCamera::GetProjectionMatrix(void) const { return m_projection; }
 
     glm::mat4        DefaultCamera::m_CreateViewMatrix(void) const {
-        glm::vec3 look(m_orient * glm::vec4(0.f, 0.f, -1.f, 0.f));
-        return glm::lookAtRH(m_pos, m_pos + look, glm::vec3(0.f, 1.f, 0.f));
+        return glm::lookAtRH(m_pos, m_pos + forward(), glm::vec3(0.f, 1.f, 0.f));
     }
 
     glm::mat4 DefaultCamera::m_CreateProjectionMatrix(void) const {

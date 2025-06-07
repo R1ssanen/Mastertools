@@ -10,13 +10,20 @@
 
 namespace mt {
 
+    inline f32 snap_full(f32 x, u32 n, f32 inv_n) { return std::round(x * n) * inv_n; }
+
+#define snap(x, n)   snap_full(x, n, 1.f / n)
+
+#define snapv4(v, n) glm::vec4(snap(v.x, n), snap(v.y, n), v.z, v.w)
+
     class Plane {
       public:
 
         virtual bool inside(const glm::vec4& p) const = 0;
 
         glm::vec4    line_intersection(const glm::vec4& p0, const glm::vec4& p1) const {
-            return p0 + line_intersection_scalar(p0, p1) * (p1 - p0);
+            f32 t = line_intersection_scalar(p0, p1);
+            return p0 + std::clamp(t, 0.f, 1.f) * (p1 - p0);
         }
 
       protected:

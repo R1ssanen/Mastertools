@@ -41,13 +41,27 @@ namespace mt {
 
         virtual void             SetAspectRatio(f32 aspect_ratio);
 
+        glm::vec3                forward() const {
+
+            f32       yaw     = m_orient.x;
+            f32       pitch   = m_orient.y;
+
+            glm::vec3 forward = { std::cos(yaw) * std::cos(pitch), std::sin(pitch),
+                                                 std::sin(yaw) * std::cos(pitch) };
+            return glm::normalize(forward);
+        }
+
+        glm::vec3 right() const { return glm::cross(forward(), glm::vec3(0.f, 1.f, 0.f)); }
+
+        glm::vec3 up() const { return glm::cross(right(), forward()); }
+
       protected:
 
         BaseCamera(const glm::vec3& pos, f32 near, f32 far, f32 fov, f32 aspect_ratio)
-            : m_orient(glm::mat4(1.f)), m_pos(pos), m_near(near), m_far(far),
+            : m_orient(glm::vec3(0.f)), m_pos(pos), m_near(near), m_far(far),
               m_fov(glm::radians(fov)), m_aspect(aspect_ratio) { }
 
-        glm::mat4 m_orient;
+        glm::vec3 m_orient;
         glm::vec3 m_pos;
         f32       m_near;
         f32       m_far;
@@ -82,20 +96,17 @@ namespace mt {
 
         void             SetAspectRatio(f32 aspect_ratio) override;
 
-        void             rotate(f32 dxm, f32 dym) {
+        void             rotate(f32 dx, f32 dy) {
 
-            constexpr f32 max_y = glm::radians(89.f);
-            f32           dx    = glm::radians(dxm * 0.5f);
-            f32           dy    = glm::clamp(glm::radians(dym * 0.5f), -max_y, max_y);
+            constexpr f32 max_pitch = glm::radians(89.f);
+            constexpr f32 sens_x = 0.5f, sens_y = 0.5f;
 
-            // f32           pitch, yaw, roll;
-            // glm::extractEulerAngleXYZ(m_orient, pitch, yaw, roll);
-            auto pitch  = glm::rotate(glm::mat4(1.f), -dy, glm::vec3(1.f, 0.f, 0.f));
-            auto yaw    = glm::rotate(glm::mat4(1.f), -dx, glm::vec3(0.f, 1.f, 0.f));
+            f32           yaw   = glm::radians(dx * sens_x);
+            f32           pitch = glm::radians(dy * sens_y);
 
-            auto rotate = pitch * yaw;
-            m_orient    = m_orient * rotate;
-            m_view      = m_CreateViewMatrix();
+            m_orient += glm::vec3(yaw, -pitch, 0.f);
+            m_orient.y = std::clamp(m_orient.y, -max_pitch, max_pitch);
+            m_view     = m_CreateViewMatrix();
         }
 
       protected:

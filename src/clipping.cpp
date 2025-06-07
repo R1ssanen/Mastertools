@@ -7,23 +7,6 @@
 
 #include "mtdefs.hpp"
 
-namespace {
-
-    enum ClipLayout {
-        ALL_OUT = 0, // 000
-        ALL_IN  = 7, // 111
-
-        A_IN    = 1, // 001
-        B_IN    = 2, // 010
-        C_IN    = 4, // 100
-
-        A_OUT   = 6, // 110
-        B_OUT   = 5, // 101
-        C_OUT   = 3, // 011
-    };
-
-} // namespace
-
 namespace mt {
 
     void clip_triangle_homo_plane(
@@ -34,40 +17,40 @@ namespace mt {
 
         switch ((plane.inside(p2) << 2) | (plane.inside(p1) << 1) | plane.inside(p0)) {
 
-        case ClipLayout::ALL_IN: triangles.push_back({ p0, p1, p2 });
-        case ClipLayout::ALL_OUT: return;
+        case 0b111: triangles.push_back({ p0, p1, p2 });
+        case 0b000: return;
 
-        case ClipLayout::A_IN:
+        case 0b001:
             triangles.push_back(
                 { p0, plane.line_intersection(p0, p1), plane.line_intersection(p0, p2) }
             );
             return;
 
-        case ClipLayout::B_IN:
+        case 0b010:
             triangles.push_back(
                 { plane.line_intersection(p1, p0), p1, plane.line_intersection(p1, p2) }
             );
             return;
 
-        case ClipLayout::C_IN:
+        case 0b100:
             triangles.push_back(
                 { plane.line_intersection(p2, p0), plane.line_intersection(p2, p1), p2 }
             );
             return;
 
-        case ClipLayout::A_OUT:
+        case 0b110:
             tmp = plane.line_intersection(p1, p0);
             triangles.push_back({ tmp, p1, p2 });
             triangles.push_back({ tmp, p2, plane.line_intersection(p2, p0) });
             return;
 
-        case ClipLayout::B_OUT:
+        case 0b101:
             tmp = plane.line_intersection(p0, p1);
             triangles.push_back({ p0, tmp, p2 });
             triangles.push_back({ tmp, plane.line_intersection(p2, p1), p2 });
             return;
 
-        case ClipLayout::C_OUT:
+        case 0b011:
             tmp = plane.line_intersection(p0, p2);
             triangles.push_back({ p0, p1, tmp });
             triangles.push_back({ tmp, p1, plane.line_intersection(p1, p2) });

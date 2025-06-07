@@ -29,6 +29,47 @@ using namespace mt;
 int main(int argc, char* argv[]) {
     srand(time(0));
 
+    /*
+
+        template <typename T>
+        class Frame {
+            public:
+
+                Frame
+
+            private:
+
+                T* m_data;
+        };
+
+    */
+
+    /*
+
+        uint32_t width = 1440;
+        uint32_t height = 900;
+
+        rohan::Frame<uint32_t> pixelbuf(width, height);
+        rohan::Frame<float>    zbuf(width, height);
+
+        rohan::RenderTarget<uint32_t, float> target;
+        target.bind_color_buffer(pixelbuf);
+        target.bind_depth_buffer(zbuf);
+
+        target.cull_backfaces(true);
+        target.winding_order(rohan::WindingOrder::CW);
+        target.test_depth(true);
+        target.depth_reject(rohan::DepthMethod::LESS);
+        target.depth_range(1.f, 0.f);
+
+        const float* vertices = {...};
+        const uint32_t* indices = {...};
+
+        target.draw_indexed(vertices, indices, rohan::DrawMode::TRIANGLES);
+
+        uint32_t* finished_frame = pixelbuf.data();
+    */
+
     u64           width = 1920, height = 1080;
     u64           resx = width / 3, resy = height / 3;
 
@@ -46,13 +87,12 @@ int main(int argc, char* argv[]) {
     // render variables
     Framebuffer   framebuffer(resx, resy);
     DefaultCamera camera;
-    camera.SetFarDistance(10.f);
 
-    MeshGeometry mesh("resource/cornell_box.obj", MeshFormat::OBJ);
-    glm::vec3    model_pos     = { 0.f, 0.f, 0.f };
-    glm::vec3    model_scale   = { 1.f, 1.f, 1.f };
-    glm::vec3    rotation_axis = { 0.f, 1.f, 0.f };
-    rotation_axis              = glm::sphericalRand(1.f);
+    MeshGeometry  mesh("resource/cornell_box.obj", MeshFormat::OBJ);
+    glm::vec3     model_pos     = { 0.f, 0.f, 0.f };
+    glm::vec3     model_scale   = { 1.f, 1.f, 1.f };
+    glm::vec3     rotation_axis = { 0.f, 1.f, 0.f };
+    rotation_axis               = glm::sphericalRand(1.f);
 
     VertexBuffer      vbo(mesh.GetVertices(), mesh.GetVertexCount(), 4);
     IndexBuffer       ibo(mesh.GetIndices(), mesh.GetIndexCount());
@@ -93,18 +133,16 @@ int main(int argc, char* argv[]) {
                 SDL_SetWindowRelativeMouseMode(window, relative_mouse);
             }
 
-            if KEY_EVENT (SDLK_S)
-                camera.SetPosition(camera.GetPosition() + glm::vec3(0.f, 0.f, 0.1f));
             if KEY_EVENT (SDLK_W)
-                camera.SetPosition(camera.GetPosition() - glm::vec3(0.f, 0.f, 0.1f));
-            if KEY_EVENT (SDLK_D)
-                camera.SetPosition(camera.GetPosition() + glm::vec3(0.1f, 0.f, 0.f));
-            if KEY_EVENT (SDLK_A)
-                camera.SetPosition(camera.GetPosition() - glm::vec3(0.1f, 0.f, 0.f));
+                camera.SetPosition(camera.GetPosition() + camera.forward() * 0.05f);
+            if KEY_EVENT (SDLK_S)
+                camera.SetPosition(camera.GetPosition() - camera.forward() * 0.05f);
+            if KEY_EVENT (SDLK_D) camera.SetPosition(camera.GetPosition() + camera.right() * 0.05f);
+            if KEY_EVENT (SDLK_A) camera.SetPosition(camera.GetPosition() - camera.right() * 0.05f);
             if KEY_EVENT (SDLK_SPACE)
-                camera.SetPosition(camera.GetPosition() + glm::vec3(0.f, 0.1f, 0.f));
+                camera.SetPosition(camera.GetPosition() + camera.up() * 0.05f);
             if KEY_EVENT (SDLK_LSHIFT)
-                camera.SetPosition(camera.GetPosition() - glm::vec3(0.f, 0.1f, 0.f));
+                camera.SetPosition(camera.GetPosition() - camera.up() * 0.05f);
 
             if (e.type == SDL_EVENT_MOUSE_MOTION) {
                 f32 dx, dy;
