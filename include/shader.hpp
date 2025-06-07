@@ -49,6 +49,7 @@ namespace mt {
         f32*         attribs[3];
         u64          loc;
         u32          id;
+        f32          w;
     };
 
 } // namespace mt
@@ -89,15 +90,50 @@ namespace mt {
             out                  = (*cubemap)[face][uv];
             */
 
-            out = id;
-            //  out = glm::packUnorm4x8(glm::vec4(pos.z));
-            //  out = glm::packUnorm4x8(glm::vec4(1.f, barycoord));
+            out = glm::packUnorm4x8(glm::vec4(pos.z));
+            return;
+
+            f32       ndc_x      = pos.x * inv_w_2 - 1.f;
+            f32       ndc_y      = 1.f - pos.y * inv_h_2;
+            f32       ndc_z      = pos.z; // / 50.f;
+
+            glm::vec4 frag_world = inv_view_proj * glm::vec4(ndc_x, ndc_y, ndc_z, 1.f);
+            frag_world /= frag_world.w;
+
+            glm::vec4 ls_view = light_view * frag_world;
+            glm::vec4 ls_clip = projection * ls_view;
+            ls_clip /= ls_clip.w;
+
+            ndc_x           = glm::clamp(0.5f + ls_clip.x * 0.5f, 0.f, 1.f);
+            ndc_y           = glm::clamp(0.5f - ls_clip.y * 0.5f, 0.f, 1.f);
+
+            f32 shadowmap_z = shadowmap[u32(ndc_y * height) * width + u32(ndc_x * width)];
+
+            out             = glm::packUnorm4x8(glm::vec4(ls_clip.z / 50.f));
+            return;
+
+            if (-ls_view.z > shadowmap_z) out = 0;
+            else
+                out = id;
+
+            // f32 z                 = shadowmap[u32(pos.y) * width + u32(pos.x)];
+            // out                   = glm::packUnorm4x8(glm::vec4(z / 100.f));
+            //    out                   = glm::packUnorm4x8(glm::vec4(shadowmap_z / 100.f));
         }
+
+        glm::mat4          light_view;
+        glm::mat4          projection;
 
         cubemap_texture_t* cubemap;
         f32*               depth_buffer;
+        f32*               shadowmap;
         u32                width, height;
         f32                inv_w_2, inv_h_2;
+    };
+
+    class ShadowFrag : public FragShaderBase {
+
+        void operator()(u32& out) const override { }
     };
 
 } // namespace mt

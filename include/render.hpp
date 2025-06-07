@@ -57,7 +57,24 @@ namespace mt {
                                slope_xl, slope_xr, slope_z0, slope_z1, slope_w0, slope_w1 };
         };
 
-        auto rasterize = [this, &frag, &bary](
+        auto vec_x_less   = [](auto& lhs, auto& rhs) { return lhs.x < rhs.x; };
+
+        // y-ordered
+        auto [p0, p1, p2] = [&uo_p0, &uo_p1, &uo_p2]() {
+            auto* p0 = &uo_p0;
+            auto* p1 = &uo_p1;
+            auto* p2 = &uo_p2;
+
+            if (p0->y > p1->y) std::swap(p0, p1);
+            if (p1->y > p2->y) std::swap(p1, p2);
+            if (p0->y > p1->y) std::swap(p0, p1);
+
+            return std::tie(*p0, *p1, *p2);
+        }();
+
+        glm::vec3 z_pack    = { uo_p0.z, uo_p1.z, uo_p2.z };
+
+        auto      rasterize = [this, &frag, &bary, &z_pack](
                              f32 x0, f32 x1, f32 y0, f32 y1, f32 z0, f32 w0, f32 slope_xl,
                              f32 slope_xr, f32 slope_z0, f32 slope_z1, f32 slope_w0, f32 slope_w1
                          ) {
@@ -77,13 +94,18 @@ namespace mt {
                 for (f32 x = std::trunc(slope_xl * y_step + x0);
                      x < std::trunc(slope_xr * y_step + x1); ++x) {
 
-                    frag.loc   = row + u32(x);
-                    frag.pos.z = z / w;
-                    f32& depth = m_depth[frag.loc];
+                    glm::vec3 term = b / w;
+                    frag.barycoord = term / (term.x + term.y + term.z);
+                    frag.pos.z     = glm::dot(frag.barycoord, z_pack);
+                    frag.pos.z     = (0.1f * 50.f / (50.f - (50.f - 0.1f) * frag.pos.z)) / 50.f;
+
+                    frag.loc       = row + u32(x);
+                    // frag.pos.z = z / w;
+
+                    f32& depth     = m_depth[frag.loc];
 
                     if (depth > frag.pos.z) {
                         depth      = frag.pos.z;
-
                         frag.pos.x = x;
                         frag.pos.y = y;
                         frag(m_color[frag.loc]);
@@ -99,21 +121,6 @@ namespace mt {
                 z0 += slope_z1;
             }
         };
-
-        auto vec_x_less   = [](auto& lhs, auto& rhs) { return lhs.x < rhs.x; };
-
-        // y-ordered
-        auto [p0, p1, p2] = [&uo_p0, &uo_p1, &uo_p2]() {
-            const auto* p0 = &uo_p0;
-            const auto* p1 = &uo_p1;
-            const auto* p2 = &uo_p2;
-
-            if (p0->y > p1->y) std::swap(p0, p1);
-            if (p1->y > p2->y) std::swap(p1, p2);
-            if (p0->y > p1->y) std::swap(p0, p1);
-
-            return std::tie(*p0, *p1, *p2);
-        }();
 
         // flat top
         if (u32(p0.y) == u32(p1.y)) {
@@ -167,7 +174,7 @@ namespace mt {
         };
 
         for (u64 id = 0, i = 0; i < ebo.ibo.GetCount(); i += 3, ++id) {
-            frag.id           = hash(id);
+            frag.id           = hash(id) | 0x3813daff;
 
             frag.attribs[0]   = transformed + ebo.ibo[i + 0] * elements;
             frag.attribs[1]   = transformed + ebo.ibo[i + 1] * elements;
@@ -188,7 +195,9 @@ namespace mt {
                 p.w = 1.f / p.w;
                 p.x *= p.w;
                 p.y *= p.w;
+
                 p.z *= p.w;
+                //  std::clog << p.z << ' ' << p.z * p.w << '\n';
 
                 p.x = std::clamp(0.5f + p.x * 0.5f, 0.f, 1.f);
                 p.y = std::clamp(0.5f - p.y * 0.5f, 0.f, 1.f);

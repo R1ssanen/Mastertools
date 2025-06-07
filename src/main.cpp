@@ -31,21 +31,6 @@ int main(int argc, char* argv[]) {
 
     /*
 
-        template <typename T>
-        class Frame {
-            public:
-
-                Frame
-
-            private:
-
-                T* m_data;
-        };
-
-    */
-
-    /*
-
         uint32_t width = 1440;
         uint32_t height = 900;
 
@@ -88,7 +73,11 @@ int main(int argc, char* argv[]) {
     Framebuffer   framebuffer(resx, resy);
     DefaultCamera camera;
 
-    MeshGeometry  mesh("resource/cornell_box.obj", MeshFormat::OBJ);
+    DefaultCamera shadow_camera;
+    ShadowFrag    shadow_fs;
+    Framebuffer   shadowbuffer(resx, resy);
+
+    MeshGeometry  mesh("resource/shadow_test.obj", MeshFormat::OBJ);
     glm::vec3     model_pos     = { 0.f, 0.f, 0.f };
     glm::vec3     model_scale   = { 1.f, 1.f, 1.f };
     glm::vec3     rotation_axis = { 0.f, 1.f, 0.f };
@@ -109,13 +98,22 @@ int main(int argc, char* argv[]) {
     bool relative_mouse = true;
     SDL_SetWindowRelativeMouseMode(window, true);
 
-    cubemap_texture_t cubemap = {
+    /*cubemap_texture_t cubemap = {
         Texture::Load("resource/cubemap_1/px.png"), Texture::Load("resource/cubemap_1/nx.png"),
         Texture::Load("resource/cubemap_1/py.png"), Texture::Load("resource/cubemap_1/ny.png"),
         Texture::Load("resource/cubemap_1/pz.png"), Texture::Load("resource/cubemap_1/nz.png")
     };
 
-    fs.cubemap = &cubemap;
+    fs.cubemap   = &cubemap;
+    */
+
+    shadowbuffer.Clear(BDEPTH);
+    vs.transform = shadow_camera.GetProjectionMatrix() * shadow_camera.GetViewMatrix();
+    shadowbuffer.render_elements(ebo, vs, shadow_fs);
+
+    fs.shadowmap  = const_cast<f32*>(shadowbuffer.GetDepthBuffer().GetData());
+    fs.light_view = shadow_camera.GetViewMatrix();
+    fs.projection = shadow_camera.GetProjectionMatrix();
 
     for (f32 dt = 0.f; running; ++frames, dt += rotate ? 0.001f : 0.f) {
         auto      time_frame_start = std::chrono::system_clock::now();
@@ -151,19 +149,21 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        glm::mat4 rotate    = glm::rotate(glm::mat4(1.f), dt, rotation_axis);
+        /*glm::mat4 rotate    = glm::rotate(glm::mat4(1.f), dt, rotation_axis);
         glm::mat4 translate = glm::translate(glm::mat4(1.f), model_pos);
         glm::mat4 scale     = glm::scale(glm::mat4(1.f), model_scale);
-        glm::mat4 model     = translate * rotate * scale;
+        glm::mat4 model     = translate * rotate * scale;*/
 
         glm::mat4 view      = camera.GetViewMatrix();
         glm::mat4 proj      = camera.GetProjectionMatrix();
-        glm::mat4 transform = proj * view * model;
+        glm::mat4 transform = proj * view; // * model;
 
         fs.inv_view_proj    = glm::inverse(proj * view);
 
         vs.transform        = transform;
         framebuffer.render_elements(ebo, vs, fs);
+
+        // framebuffer.render_elements();
 
         // framebuffer.render_cubemap_fullscreen(proj, view, cubemap);
 

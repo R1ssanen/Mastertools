@@ -58,8 +58,8 @@ namespace mt {
       protected:
 
         BaseCamera(const glm::vec3& pos, f32 near, f32 far, f32 fov, f32 aspect_ratio)
-            : m_orient(glm::vec3(0.f)), m_pos(pos), m_near(near), m_far(far),
-              m_fov(glm::radians(fov)), m_aspect(aspect_ratio) { }
+            : m_orient(glm::vec3(-glm::half_pi<f32>(), 0.f, 0.f)), m_pos(pos), m_near(near),
+              m_far(far), m_fov(glm::radians(fov)), m_aspect(aspect_ratio) { }
 
         glm::vec3 m_orient;
         glm::vec3 m_pos;
@@ -78,7 +78,7 @@ namespace mt {
 
         DefaultCamera(
             const glm::vec3& pos     = glm::vec3(0.f),
-            const glm::vec3& forward = glm::vec3(0.f, 0.f, -1.f), f32 near = 0.1f, f32 far = 100.f,
+            const glm::vec3& forward = glm::vec3(0.f, 0.f, -1.f), f32 near = 0.1f, f32 far = 50.f,
             f32 fov = 90.f, f32 aspect_ratio = 1440.f / 900.f
         );
 
@@ -121,6 +121,38 @@ namespace mt {
 
         glm::mat4 m_CreateProjectionMatrix(void) const;
     };
+
+    inline glm::vec3 screen_to_screen(
+        const glm::vec3& p, const glm::mat4& view0, const glm::mat4& view1, const glm::mat4& proj,
+        u32 width, u32 height
+    ) {
+        // Convert screen-space coordinates to normalized device coordinates (NDC)
+        glm::vec4 ndc;
+        ndc.x                  = (2.0f * p.x) / width - 1.0f;
+        ndc.y                  = 1.0f - (2.0f * p.y) / height;
+        ndc.z                  = p.z; // Depth remains unchanged
+        ndc.w                  = 1.0f;
+
+        // Convert NDC to world-space using the inverse of the old view-projection matrix
+        glm::mat4 oldVPInverse = glm::inverse(proj * view0);
+        glm::vec4 worldPoint   = oldVPInverse * ndc;
+        worldPoint /= worldPoint.w; // Perspective divide
+
+        // Transform world-space point using the new view matrix
+        glm::vec4 newViewPoint   = view1 * worldPoint;
+
+        // Convert back to screen-space using the new projection matrix
+        glm::vec4 newScreenPoint = proj * newViewPoint;
+        newScreenPoint /= newScreenPoint.w; // Perspective divide
+
+        // Convert back to pixel coordinates
+        glm::vec3 finalScreenPoint;
+        finalScreenPoint.x = (newScreenPoint.x + 1.0f) * 0.5f * width;
+        finalScreenPoint.y = (1.0f - newScreenPoint.y) * 0.5f * height;
+        finalScreenPoint.z = newScreenPoint.z; // Depth remains unchanged
+
+        return finalScreenPoint;
+    }
 
 } // namespace mt
 
