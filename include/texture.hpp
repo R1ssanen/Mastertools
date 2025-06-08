@@ -117,19 +117,25 @@ namespace mt {
         }
     }
 
-    inline glm::vec3
-    screen_to_world_no_z(f32 x, f32 y, f32 inv_w_2, f32 inv_h_2, const glm::mat4& inv_view_proj) {
-
-        f32       ndc_x = x * inv_w_2 - 1.f;
-        f32       ndc_y = y * inv_h_2 - 1.f;
-
-        glm::vec4 world = inv_view_proj * glm::vec4(ndc_x, ndc_y, 1.f, 1.f);
+    inline glm::vec3 clip_to_world(const glm::vec4& p, const glm::mat4& inv_view_proj) {
+        glm::vec4 world = inv_view_proj * p;
         return glm::vec3(world) / world.w;
     }
 
-    inline glm::vec3 clip_to_world(const glm::vec4& clip, const glm::mat4& inv_view_proj) {
-        glm::vec4 world = inv_view_proj * clip;
-        return glm::vec3(world) / world.w;
+    inline glm::vec3 screen_to_world(
+        f32 screen_x, f32 screen_y, f32 ndc_z, f32 inv_w_2, f32 inv_h_2,
+        const glm::mat4& inv_view_proj
+    ) {
+
+        f32 ndc_x = screen_x * inv_w_2 - 1.f;
+        f32 ndc_y = 1.f - screen_y * inv_h_2;
+
+        return clip_to_world(glm::vec4(ndc_x, ndc_y, ndc_z, 1.f), inv_view_proj);
+    }
+
+    inline glm::vec3
+    screen_to_world(const glm::vec3& p, f32 inv_w_2, f32 inv_h_2, const glm::mat4& inv_view_proj) {
+        return screen_to_world(p.x, p.y, p.z, inv_w_2, inv_h_2, inv_view_proj);
     }
 
     void Framebuffer::render_cubemap_fullscreen(
@@ -143,9 +149,9 @@ namespace mt {
         view_no_translation[3]        = glm::vec4(0.f, 0.f, 0.f, 1.f);
         glm::mat4 inv_view_proj       = glm::inverse(proj * view_no_translation);
 
-        glm::vec3 d0                  = screen_to_world_no_z(0, 0, inv_w_2, inv_h_2, inv_view_proj);
-        glm::vec3 slope_d0 = screen_to_world_no_z(1, 0, inv_w_2, inv_h_2, inv_view_proj) - d0;
-        glm::vec3 slope_d1 = screen_to_world_no_z(0, 1, inv_w_2, inv_h_2, inv_view_proj) - d0;
+        glm::vec3 d0       = screen_to_world(0.f, 0.f, 1.f, inv_w_2, inv_h_2, inv_view_proj);
+        glm::vec3 slope_d0 = screen_to_world(1.f, 0.f, 1.f, inv_w_2, inv_h_2, inv_view_proj) - d0;
+        glm::vec3 slope_d1 = screen_to_world(0.f, 1.f, 1.f, inv_w_2, inv_h_2, inv_view_proj) - d0;
 
         for (u32 y = 0, row = 0; y < m_height; ++y) {
             glm::vec3 d = d0;

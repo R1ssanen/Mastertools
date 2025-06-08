@@ -28,7 +28,7 @@ using namespace mt;
 
 struct Model {
     MeshGeometry mesh;
-    glm::vec3    pos;
+    glm::vec3    pos, scale;
     bool         rotate, is_shadower;
 };
 
@@ -81,17 +81,20 @@ int main(int argc, char* argv[]) {
     // camera.SetPosition(glm::vec3(1.2f, 0.6f, 1.f));
 
     DefaultCamera shadow_camera;
-    ShadowFrag    shadow_fs;
-    Framebuffer   shadowbuffer(resx, resy);
+    shadow_camera.SetPosition(glm::vec3(0.f, 0.f, 5.f));
 
-    auto          models =
+    ShadowFrag  shadow_fs;
+    Framebuffer shadowbuffer(resx, resy);
+
+    glm::vec3   rotation_axis = glm::sphericalRand(1.f);
+    auto        models =
         std::array{ Model(
                         MeshGeometry("resource/shadow_testing/shadower.obj", MeshFormat::OBJ),
-                        glm::vec3(0.f), true, true
+                        glm::vec3(0.f), glm::vec3(1.f), true, true
                     ),
                     Model(
                         MeshGeometry("resource/shadow_testing/wall.obj", MeshFormat::OBJ),
-                        glm::vec3(0.f), false, false
+                        glm::vec3(0.f), glm::vec3(1.f), false, false
                     ) };
 
     StdForwardVertex1 vs;
@@ -157,7 +160,8 @@ int main(int argc, char* argv[]) {
             if (!model.is_shadower) continue;
 
             glm::mat4 mat_model =
-                glm::rotate(glm::mat4(1.f), model.rotate ? dt : 0.f, glm::vec3(0.f, 1.f, 0.f));
+                glm::rotate(glm::mat4(1.f), model.rotate ? dt : 0.f, rotation_axis) *
+                glm::scale(glm::mat4(1.f), model.scale);
 
             VertexBuffer vbo(model.mesh.GetVertices(), model.mesh.GetVertexCount(), 4);
             IndexBuffer  ibo(model.mesh.GetIndices(), model.mesh.GetIndexCount());
@@ -174,7 +178,8 @@ int main(int argc, char* argv[]) {
         for (auto& model : models) {
 
             glm::mat4 mat_model =
-                glm::rotate(glm::mat4(1.f), model.rotate ? dt : 0.f, glm::vec3(0.f, 1.f, 0.f));
+                glm::rotate(glm::mat4(1.f), model.rotate ? dt : 0.f, rotation_axis) *
+                glm::scale(glm::mat4(1.f), model.scale);
 
             VertexBuffer vbo(model.mesh.GetVertices(), model.mesh.GetVertexCount(), 4);
             IndexBuffer  ibo(model.mesh.GetIndices(), model.mesh.GetIndexCount());

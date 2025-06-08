@@ -172,8 +172,8 @@ namespace mt {
             return x;
         };
 
-        for (u64 id = 0, i = 0; i < ibo.GetCount(); i += 3, ++id) {
-            frag.id           = hash(id) | 0x3813daff;
+        for (u64 id = 1, i = 0; i < ibo.GetCount(); i += 3, ++id) {
+            frag.id           = hash(id);
 
             frag.attribs[0]   = transformed + ibo[i + 0] * elements;
             frag.attribs[1]   = transformed + ibo[i + 1] * elements;
@@ -194,9 +194,7 @@ namespace mt {
                 p.w = 1.f / p.w;
                 p.x *= p.w;
                 p.y *= p.w;
-
                 p.z *= p.w;
-                //  std::clog << p.z << ' ' << p.z * p.w << '\n';
 
                 p.x = std::clamp(0.5f + p.x * 0.5f, 0.f, 1.f);
                 p.y = std::clamp(0.5f - p.y * 0.5f, 0.f, 1.f);
@@ -237,7 +235,7 @@ namespace mt {
 
         int dx = x1 - x0;
         if (dx == 0) {
-            for (u32 y = std::min(y0, y1); y <= std::max(y0, y1); ++y)
+            for (u32 y = std::min(y0, y1); y < std::max(y0, y1); ++y)
                 m_color[y * m_width + x0] = color;
             return;
         }
@@ -245,7 +243,7 @@ namespace mt {
         int dy = y1 - y0;
         if (dy == 0) {
             u64 begin = y0 * m_width + std::min(x0, x1);
-            std::fill_n(&m_color[begin], std::abs(dx), color);
+            std::fill_n(&m_color[begin], std::abs(dx) - 1, color);
             return;
         }
 
@@ -258,7 +256,7 @@ namespace mt {
 
             f32 slope = f32(dy) / f32(dx);
             f32 y     = y0;
-            for (u32 x = x0; x <= x1; ++x, y += slope) m_color[u32(y) * m_width + x] = color;
+            for (u32 x = x0; x < x1; ++x, y += slope) m_color[u32(y) * m_width + x] = color;
         }
 
         // over or even 45 degrees
@@ -270,7 +268,7 @@ namespace mt {
 
             f32 slope = f32(dx) / f32(dy);
             f32 x     = x0;
-            for (u32 y = y0; y <= y1; ++y, x += slope) m_color[y * m_width + u32(x)] = color;
+            for (u32 y = y0; y < y1; ++y, x += slope) m_color[y * m_width + u32(x)] = color;
         }
     }
 
