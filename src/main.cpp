@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
     fs.inv_far = 1.f / 200.f;
     fs.cubemap = &cubemap;
 
-    AABB cubemap_aabb(glm::vec3(0.f, 0.f, -0.5f), glm::vec3(1.01f, 1.01f, 1.01f));
+    AABB cubemap_aabb(glm::vec3(0.f, 0.f, -0.5f), glm::vec3(1.03f));
     fs.cubemap_aabb = &cubemap_aabb;
 
     // auto texture         = Texture::Load("resource/uv_debug.png");
