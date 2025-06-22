@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 
+#include "aabb.hpp"
 #include "buffers/buffer.hpp"
 #include "buffers/framebuffer.hpp"
 
@@ -30,7 +31,7 @@ namespace mt {
                 u8* tmp = new u8[width * height * sizeof(u32)];
 
                 // endianness reversed, for some reason :/
-                for (u64 i = 0, j = 0; i < width * height * 3; i += 3, j += 4) {
+                for (u64 i = 0, j = 0; i < u64(width * height * 3); i += 3, j += 4) {
                     tmp[j]     = 0xff;
                     tmp[j + 1] = data[i + 2];
                     tmp[j + 2] = data[i + 1];
@@ -57,9 +58,12 @@ namespace mt {
             return m_mem[y * m_width + x];
         }
 
+        u64 pitch() const noexcept { return m_pitch; }
+
       private:
 
-        Texture(u64 width, u64 height, u32* data) : Buffer<u32>(width, height) {
+        Texture(u64 width, u64 height, u32* data)
+            : Buffer<u32>(width, height), m_pitch(width * sizeof(u32)) {
             this->m_mem = std::vector(data, data + width * height);
         }
 
@@ -70,6 +74,7 @@ namespace mt {
             m_mem[3] = 0xffffffff;
         }
 
+        u64 m_pitch;
         int m_channels;
     };
 
@@ -84,33 +89,33 @@ namespace mt {
 
     using cubemap_texture_t = std::array<Texture, 6>;
 
+    // right-handed system, -z, +y
     inline std::pair<CubemapFace, glm::vec2> sample_cubemap(const glm::vec3& d) {
         assert(glm::length(d) != 0.f);
         glm::vec3 abs_d = glm::abs(d);
 
-        if (abs_d.x > abs_d.y && abs_d.x > abs_d.z) {
-            f32 inv_x_half = 0.5f / (d.x + FLT_EPSILON);
+        if ((abs_d.x > abs_d.y) && (abs_d.x > abs_d.z)) {
+            f32 inv_x_half = 0.5f / d.x;
             f32 u          = 0.5f + d.z * inv_x_half;
-            f32 v          = 0.5f + d.y * inv_x_half;
+            f32 v          = 0.5f - d.y * inv_x_half;
 
             return d.x > 0.f ? std::make_pair(CubemapFace::POSITIVE_X, glm::vec2(u, v))
                              : std::make_pair(CubemapFace::NEGATIVE_X, glm::vec2(u, 1.f - v));
         }
 
-        else if (abs_d.y > abs_d.x && abs_d.y > abs_d.z) {
-            f32 inv_y_half = 0.5f / (d.y + FLT_EPSILON);
+        else if ((abs_d.y > abs_d.x) && (abs_d.y > abs_d.z)) {
+            f32 inv_y_half = 0.5f / d.y;
             f32 u          = 0.5f + d.x * inv_y_half;
-            f32 v          = 0.5f - d.z * inv_y_half;
+            f32 v          = 0.5f + d.z * inv_y_half;
 
-            // inverted, y-up
-            return d.y < 0.f ? std::make_pair(CubemapFace::POSITIVE_Y, glm::vec2(u, v))
-                             : std::make_pair(CubemapFace::NEGATIVE_Y, glm::vec2(1.f - u, v));
+            return d.y > 0.f ? std::make_pair(CubemapFace::POSITIVE_Y, glm::vec2(1.f - u, v))
+                             : std::make_pair(CubemapFace::NEGATIVE_Y, glm::vec2(u, v));
         }
 
         else {
-            f32 inv_z_half = 0.5f / (d.z + FLT_EPSILON);
+            f32 inv_z_half = 0.5f / d.z;
             f32 u          = 0.5f - d.x * inv_z_half;
-            f32 v          = 0.5f + d.y * inv_z_half;
+            f32 v          = 0.5f - d.y * inv_z_half;
 
             return d.z > 0.f ? std::make_pair(CubemapFace::POSITIVE_Z, glm::vec2(u, v))
                              : std::make_pair(CubemapFace::NEGATIVE_Z, glm::vec2(u, 1.f - v));
@@ -122,6 +127,7 @@ namespace mt {
         return glm::vec3(world) / world.w;
     }
 
+    // right-handed system, -z, +y
     inline glm::vec3 screen_to_world(
         f32 screen_x, f32 screen_y, f32 ndc_z, f32 inv_w_2, f32 inv_h_2,
         const glm::mat4& inv_view_proj
@@ -139,7 +145,8 @@ namespace mt {
     }
 
     void Framebuffer::render_cubemap_fullscreen(
-        const glm::mat4& proj, const glm::mat4& view, const cubemap_texture_t& cubemap
+        const glm::mat4& proj, const glm::mat4& view, const cubemap_texture_t& cubemap,
+        const glm::mat4& rotation
     ) {
 
         f32       inv_w_2             = 2.f / m_width;
@@ -153,13 +160,17 @@ namespace mt {
         glm::vec3 slope_d0 = screen_to_world(1.f, 0.f, 1.f, inv_w_2, inv_h_2, inv_view_proj) - d0;
         glm::vec3 slope_d1 = screen_to_world(0.f, 1.f, 1.f, inv_w_2, inv_h_2, inv_view_proj) - d0;
 
-        for (u32 y = 0, row = 0; y < m_height; ++y) {
+        d0                 = rotation * glm::vec4(d0, 0.f);
+        slope_d0           = rotation * glm::vec4(slope_d0, 0.f);
+        slope_d1           = rotation * glm::vec4(slope_d1, 0.f);
+
+        u64 row            = 0;
+        for (u32 y = 0; y < m_height; ++y, row += m_width) {
             glm::vec3 d = d0;
 
             for (u32 x = 0; x < m_width; ++x) {
 
                 u32& under = m_color[row + x];
-
                 if (under == 0xdeadbeef) {
                     auto [face, uv] = sample_cubemap(d);
                     under           = cubemap[face][uv];
@@ -168,9 +179,64 @@ namespace mt {
                 d += slope_d0;
             }
 
-            row += m_width;
             d0 += slope_d1;
         }
+    }
+
+    inline void Framebuffer::render_equirectangular(
+        const DefaultCamera& camera, const Texture& texture, const glm::mat4& inv_view_proj
+    ) {
+
+        f32       fov      = camera.fov();
+        f32       half_fov = fov * 0.5f;
+        glm::vec3 angle    = camera.orientation();
+
+        f32       pi       = glm::pi<f32>();
+        f32       inv_2pi  = 1.f / glm::two_pi<f32>();
+
+        f32       yaw0     = angle.x + half_fov;
+        f32       pitch    = angle.y - half_fov;
+
+        f32       aspect   = m_width / m_height;
+        f32       step_x   = fov * aspect / m_width;
+        f32       step_y   = fov / m_height;
+
+        for (u32 y = 0; y < m_height; ++y) {
+            f32 yaw = yaw0;
+
+            for (u32 x = 0; x < m_width; ++x) {
+
+                glm::vec3 world          = glm::normalize(screen_to_world(
+                    x, y, 1.f, 1.f / m_width * 2.f, 1.f / m_height * 2.f, inv_view_proj
+                ));
+
+                yaw                      = atan2f(world.z, world.x);
+                pitch                    = asinf(world.y);
+
+                f32 u                    = (yaw + pi) * inv_2pi;
+                f32 v                    = 1.f - (pitch + glm::half_pi<f32>()) * inv_2pi;
+
+                m_color[y * m_width + x] = texture[glm::mod(glm::vec2(u, v), glm::vec2(1.f))];
+
+                yaw += step_x;
+            }
+
+            pitch += step_y;
+        }
+    }
+
+} // namespace mt
+
+namespace mt {
+
+    inline std::pair<CubemapFace, glm::vec2>
+    sample_cubemap_parallax_corrected(const glm::vec3& o, const glm::vec3& d, const AABB& aabb) {
+
+        glm::vec3 intersection;
+        if (!aabb.from_inside_intersect_ray(o, d, intersection))
+            return std::make_pair(CubemapFace::NEGATIVE_Z, glm::vec2(0.f));
+
+        return sample_cubemap(intersection - aabb.center());
     }
 
 } // namespace mt

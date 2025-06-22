@@ -18,7 +18,8 @@ namespace mt {
     );
 
     std::vector<triangle_t> clip_triangle_homo_frustum(
-        const glm::vec4& p0, const glm::vec4& p1, const glm::vec4& p2, const frustum_t& frustum
+        const glm::vec4& p0, const glm::vec4& p1, const glm::vec4& p2, const f32* attribs0,
+        const f32* attribs1, const f32* attribs2, const frustum_t& frustum
     );
 
 } // namespace mt

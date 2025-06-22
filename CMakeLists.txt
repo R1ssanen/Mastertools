@@ -16,7 +16,7 @@ add_executable (${PROJECT_NAME}
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 	set (OPTIMIZATIONS "-g")
 else ()
-	set (OPTIMIZATIONS "-O2")
+	set (OPTIMIZATIONS "-O3" "-march=native")
 endif ()
 
 target_include_directories (${PROJECT_NAME} PRIVATE "include")

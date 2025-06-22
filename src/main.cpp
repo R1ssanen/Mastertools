@@ -27,9 +27,9 @@
 using namespace mt;
 
 struct Model {
-    MeshGeometry mesh;
-    glm::vec3    pos, scale;
-    bool         rotate, is_shadower;
+    MeshGeometry& mesh;
+    glm::vec3     pos, scale;
+    bool          rotate, is_shadower;
 };
 
 int main(int argc, char* argv[]) {
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
     */
 
     u64           width = 1920, height = 1080;
-    u64           resx = width / 3, resy = height / 3;
+    u64           resx = width / 2, resy = height / 2;
 
     SDL_Window*   window   = SDL_CreateWindow("Mastertools", width, height, SDL_WINDOW_RESIZABLE);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
@@ -78,51 +78,67 @@ int main(int argc, char* argv[]) {
     // render variables
     Framebuffer   framebuffer(resx, resy);
     DefaultCamera camera;
-    // camera.SetPosition(glm::vec3(1.2f, 0.6f, 1.f));
+    camera.SetPosition(glm::vec3(0.f, 0.f, 2.f));
+    camera.SetFarDistance(200.f);
 
     DefaultCamera shadow_camera;
     shadow_camera.SetPosition(glm::vec3(0.f, 0.f, 5.f));
 
-    ShadowFrag  shadow_fs;
-    Framebuffer shadowbuffer(resx, resy);
+    ShadowFrag         shadow_fs;
+    Framebuffer        shadowbuffer(resx, resy);
 
-    glm::vec3   rotation_axis = glm::sphericalRand(1.f);
-    auto        models =
-        std::array{ Model(
-                        MeshGeometry("resource/shadow_testing/shadower.obj", MeshFormat::OBJ),
-                        glm::vec3(0.f), glm::vec3(1.f), true, true
-                    ),
-                    Model(
-                        MeshGeometry("resource/shadow_testing/wall.obj", MeshFormat::OBJ),
-                        glm::vec3(0.f), glm::vec3(1.f), false, false
-                    ) };
+    glm::vec3          rotation_axis = glm::sphericalRand(1.f);
+    std::vector<Model> models;
 
-    StdForwardVertex1 vs;
-    StdForwardFrag1   fs;
-    fs.depth_buffer = const_cast<f32*>(framebuffer.GetDepthBuffer().GetData());
-    fs.width = resx, fs.height = resy;
-    fs.inv_w_2 = 2.f / resx, fs.inv_h_2 = 2.f / resy;
+    /*
+    auto               pillar_mesh = MeshGeometry("resource/pillar.obj", MeshFormat::OBJ);
+    for (int x = -5; x < 5; ++x) {
+        for (int z = -5; z < 5; ++z) {
+            models.emplace_back(
+                pillar_mesh, glm::vec3(x * 40.f, 0.f, z * 40.f), glm::vec3(1.f), false, false
+            );
+        }
+    }*/
+    auto mesh = MeshGeometry("resource/billboard.obj", MeshFormat::OBJ);
+    models.emplace_back(mesh, glm::vec3(0.f), glm::vec3(1.f), true, false);
 
     f32  frames         = 1;
     bool rotate         = false;
     bool relative_mouse = true;
     SDL_SetWindowRelativeMouseMode(window, true);
 
-    /*cubemap_texture_t cubemap = {
-        Texture::Load("resource/cubemap_1/px.png"), Texture::Load("resource/cubemap_1/nx.png"),
-        Texture::Load("resource/cubemap_1/py.png"), Texture::Load("resource/cubemap_1/ny.png"),
-        Texture::Load("resource/cubemap_1/pz.png"), Texture::Load("resource/cubemap_1/nz.png")
+    cubemap_texture_t cubemap = {
+        Texture::Load("resource/cubemap_5/px.png"), Texture::Load("resource/cubemap_5/nx.png"),
+        Texture::Load("resource/cubemap_5/py.png"), Texture::Load("resource/cubemap_5/ny.png"),
+        Texture::Load("resource/cubemap_5/pz.png"), Texture::Load("resource/cubemap_5/nz.png")
     };
 
-    fs.cubemap   = &cubemap;
-    */
+    StdForwardVertex1 vs;
+    StdForwardFrag1   fs;
+    fs.depth_buffer = const_cast<f32*>(framebuffer.GetDepthBuffer().GetData());
+    fs.width = resx, fs.height = resy;
+    fs.inv_w_2 = 2.f / resx, fs.inv_h_2 = 2.f / resy;
+    fs.inv_far = 1.f / 200.f;
+    fs.cubemap = &cubemap;
 
-    fs.shadowmap  = const_cast<f32*>(shadowbuffer.GetDepthBuffer().GetData());
-    fs.light_view = shadow_camera.GetViewMatrix();
-    fs.projection = shadow_camera.GetProjectionMatrix();
+    AABB cubemap_aabb(glm::vec3(0.f, 0.f, -0.5f), glm::vec3(1.01f, 1.01f, 1.01f));
+    fs.cubemap_aabb = &cubemap_aabb;
+
+    // auto texture         = Texture::Load("resource/uv_debug.png");
+    // fs.texture           = &texture;
+
+    fs.shadowmap    = const_cast<f32*>(shadowbuffer.GetDepthBuffer().GetData());
+    fs.light_view   = shadow_camera.GetViewMatrix();
+    fs.projection   = shadow_camera.GetProjectionMatrix();
 
     for (f32 dt = 0.f; running; ++frames, dt += rotate ? 0.001f : 0.f) {
         auto      time_frame_start = std::chrono::system_clock::now();
+
+        glm::mat4 view             = camera.GetViewMatrix();
+        glm::mat4 proj             = camera.GetProjectionMatrix();
+        glm::mat4 view_proj        = proj * view;
+        fs.inv_view_proj           = glm::inverse(view_proj);
+        fs.camera_world            = camera.GetPosition();
 
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
@@ -155,7 +171,9 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // render shadowers
+#if 1
+
+        // render shadowmap
         for (auto& model : models) {
             if (!model.is_shadower) continue;
 
@@ -171,22 +189,58 @@ int main(int argc, char* argv[]) {
             shadowbuffer.render_elements(vbo, ibo, vs, shadow_fs);
         }
 
-        glm::mat4 view   = camera.GetViewMatrix();
-        glm::mat4 proj   = camera.GetProjectionMatrix();
-        fs.inv_view_proj = glm::inverse(proj * view);
-
+        // render frame
         for (auto& model : models) {
 
             glm::mat4 mat_model =
+                glm::translate(glm::mat4(1.f), model.pos) *
                 glm::rotate(glm::mat4(1.f), model.rotate ? dt : 0.f, rotation_axis) *
                 glm::scale(glm::mat4(1.f), model.scale);
 
-            VertexBuffer vbo(model.mesh.GetVertices(), model.mesh.GetVertexCount(), 4);
+            fs.rotation = glm::rotate(glm::mat4(1.f), model.rotate ? dt : 0.f, rotation_axis);
+
+            VertexBuffer vbo(model.mesh.GetVertices(), model.mesh.GetVertexCount(), 8);
             IndexBuffer  ibo(model.mesh.GetIndices(), model.mesh.GetIndexCount());
 
-            vs.transform = proj * view * mat_model;
+            vs.transform =
+                view_proj *
+                /*glm::inverse(
+                    glm::lookAtRH(
+                        model.pos, camera.GetPosition() - model.pos, glm::vec3(0.f, 1.f, 0.f)
+                    )
+                ) * */
+                mat_model;
             framebuffer.render_elements(vbo, ibo, vs, fs);
         }
+
+#endif
+
+        // draw world-space axes
+        {
+            u32       cx = resx - 80, cy = 80;
+
+            glm::vec3 x = glm::normalize(view * glm::vec4(1.f, 0.f, 0.f, 0.f));
+            glm::vec3 y = glm::normalize(view * glm::vec4(0.f, 1.f, 0.f, 0.f));
+            glm::vec3 z = glm::normalize(view * glm::vec4(0.f, 0.f, -1.f, 0.f));
+
+            framebuffer.render_line(
+                cx + x.x * 5.f, cy + x.y * 5.f, cx + x.x * 50.f, cy + x.y * 50.f, 0xff0000ff
+            );
+            framebuffer.render_line(
+                cx - y.x * 5.f, cy - y.y * 5.f, cx - y.x * 50.f, cy - y.y * 50.f, 0x00ff00ff
+            );
+            framebuffer.render_line(
+                cx + z.x * 5.f, cy + z.y * 5.f, cx + z.x * 50.f, cy + z.y * 50.f, 0x0000ffff
+            );
+
+            framebuffer.render_line(cx, cy, cx - x.x * 50.f, cy - x.y * 50.f, 0x646464ff);
+            framebuffer.render_line(cx, cy, cx + y.x * 50.f, cy + y.y * 50.f, 0x646464ff);
+            framebuffer.render_line(cx, cy, cx - z.x * 50.f, cy - z.y * 50.f, 0x646464ff);
+        }
+
+        // glm::mat4 skybox_rotation = glm::rotate(glm::mat4(1.f), dt * 0.2f,
+        // rotation_axis);
+        // framebuffer.render_cubemap_fullscreen(proj, view, cubemap);
 
         { // SDL side
             SDL_UpdateTexture(frame, nullptr, framebuffer.GetData(), framebuffer.GetPitch());
@@ -203,7 +257,7 @@ int main(int argc, char* argv[]) {
         }
 
         framebuffer.Clear(BCOLOR | BDEPTH);
-        shadowbuffer.Clear(BDEPTH);
+        // shadowbuffer.Clear(BDEPTH);
         time_elapsed += std::chrono::system_clock::now() - time_frame_start;
     }
 

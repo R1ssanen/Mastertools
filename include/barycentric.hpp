@@ -37,7 +37,9 @@ namespace mt {
             m_dy = glm::vec3(c.x - b.x, a.x - c.x, b.x - a.x) * m_inv_area_2;
         }
 
-        glm::vec3 GetDeltaX(void) const noexcept { return m_dx; }
+        glm::vec3 GetDeltaX() const noexcept { return m_dx; }
+
+        glm::vec3 GetDeltaYNoSlope() const noexcept { return m_dy; }
 
         glm::vec3 GetDeltaY(f32 slope) const noexcept { return m_dy + slope * m_dx; }
 

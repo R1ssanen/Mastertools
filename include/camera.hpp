@@ -31,6 +31,8 @@ namespace mt {
 
         virtual void             SetPosition(const glm::vec3& pos);
 
+        const glm::vec3&         orientation() const noexcept { return m_orient; }
+
         inline const glm::vec3&  GetPosition() { return m_pos; }
 
         virtual void             SetNearDistance(f32 near);
@@ -38,6 +40,8 @@ namespace mt {
         virtual void             SetFarDistance(f32 far);
 
         virtual void             SetFieldOfView(f32 fov);
+
+        f32                      fov() const noexcept { return m_fov; }
 
         virtual void             SetAspectRatio(f32 aspect_ratio);
 
