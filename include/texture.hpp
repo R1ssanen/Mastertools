@@ -3,6 +3,7 @@
 
 #include <array>
 #include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
 #include <iostream>
 #include <string>
 
@@ -14,6 +15,23 @@
 #include "external/stb_image.h"
 
 namespace mt {
+
+    inline glm::u8vec4 lerp(const glm::u16vec4& a, const glm::u16vec4& b, u8 t) noexcept {
+        return a + (((b - a) * u16(t)) >> u16(8));
+    }
+
+    inline glm::u8vec4 average(const glm::u16vec4& a, const glm::u16vec4& b) noexcept {
+        return (a + b) >> u16(1);
+    }
+
+    inline glm::u8vec4 unpack(u32 c) noexcept {
+        u8* comps = reinterpret_cast<u8*>(&c);
+        return glm::u8vec4(comps[0], comps[1], comps[2], comps[3]);
+    }
+
+    inline u32 pack(const glm::u8vec4& c) noexcept {
+        return (c.a << 24) | (c.b << 16) | (c.g << 8) | c.r;
+    }
 
     class Texture : public Buffer<u32> {
       public:
@@ -30,22 +48,15 @@ namespace mt {
             if (channels == 3) {
                 u8* tmp = new u8[width * height * sizeof(u32)];
 
-                // endianness reversed, for some reason :/
                 for (u64 i = 0, j = 0; i < u64(width * height * 3); i += 3, j += 4) {
-                    tmp[j]     = 0xff;
-                    tmp[j + 1] = data[i + 2];
-                    tmp[j + 2] = data[i + 1];
-                    tmp[j + 3] = data[i + 0];
+                    tmp[j + 0] = data[i + 0];
+                    tmp[j + 1] = data[i + 1];
+                    tmp[j + 2] = data[i + 2];
+                    tmp[j + 3] = 0xff;
                 }
 
                 std::swap(data, tmp);
                 free(tmp);
-
-            } else {
-                for (u64 i = 0; i < width * height * sizeof(u32); i += 4) {
-                    std::swap(data[i], data[i + 3]);
-                    std::swap(data[i + 1], data[i + 2]);
-                }
             }
 
             std::clog << "Channels loaded for texture '" << path << "': " << channels << '\n';
@@ -53,8 +64,8 @@ namespace mt {
         }
 
         u32 operator[](const glm::vec2& uv) const {
-            u32 x = std::clamp(uv.x, 0.f, 1.f) * m_width - 0.5f;
-            u32 y = std::clamp(uv.y, 0.f, 1.f) * m_height - 0.5f;
+            u32 x = std::clamp(uv.x, 0.f, 1.f) * (m_width - 1) + 0.5f;
+            u32 y = std::clamp(uv.y, 0.f, 1.f) * (m_height - 1) + 0.5f;
             return m_mem[y * m_width + x];
         }
 
@@ -68,10 +79,10 @@ namespace mt {
         }
 
         Texture() : Buffer<u32>(2, 2), m_channels(STBI_rgb_alpha) {
-            m_mem[0] = 0xd544ffff;
+            m_mem[0] = 0xffff44d5;
             m_mem[1] = 0xffffffff;
-            m_mem[2] = 0xd544ffff;
-            m_mem[3] = 0xffffffff;
+            m_mem[2] = 0xffffffff;
+            m_mem[3] = 0xffff44d5;
         }
 
         u64 m_pitch;
@@ -174,6 +185,7 @@ namespace mt {
                 if (under == 0xdeadbeef) {
                     auto [face, uv] = sample_cubemap(d);
                     under           = cubemap[face][uv];
+                    // under           = glm::packUnorm4x8(glm::vec4(uv.x, uv.y, 0.f, 1.f));
                 }
 
                 d += slope_d0;

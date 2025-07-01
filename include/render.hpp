@@ -212,7 +212,6 @@ namespace mt {
 
             auto render_triangle = [this, &frag](const auto& p0, const auto& p1, const auto& p2) {
                 Barycentric bary(p0, p1, p2, cull_backfaces);
-
                 if (!bary.is_valid) return;
                 if (cull_backfaces && bary.is_backface) return;
 

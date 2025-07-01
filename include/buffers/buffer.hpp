@@ -13,7 +13,7 @@ namespace mt {
 
         Buffer(u64 count) : Buffer(count, 1) { }
 
-        Buffer(u64 width, u64 height) : m_width(width), m_height(height), m_count(width * height) {
+        Buffer(u32 width, u32 height) : m_count(width * height), m_width(width), m_height(height) {
             m_mem   = std::vector<T>(m_count);
             m_bytes = m_count * GetStride();
         }
@@ -22,9 +22,9 @@ namespace mt {
 
         const T*     GetData(void) const { return m_mem.data(); }
 
-        u64          GetWidth(void) const { return m_width; }
+        u32          GetWidth(void) const { return m_width; }
 
-        u64          GetHeight(void) const { return m_height; }
+        u32          GetHeight(void) const { return m_height; }
 
         u64          GetCount(void) const { return m_count; }
 
@@ -40,9 +40,9 @@ namespace mt {
       protected:
 
         std::vector<T> m_mem;
-        u64            m_width;
-        u64            m_height;
         u64            m_count;
+        u32            m_width;
+        u32            m_height;
         u64            m_bytes;
     };
 

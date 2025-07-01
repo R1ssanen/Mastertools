@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
     SDL_Window*   window   = SDL_CreateWindow("Mastertools", width, height, SDL_WINDOW_RESIZABLE);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
     SDL_Texture*  frame    = SDL_CreateTexture(
-        renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, resx, resy
+        renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, resx, resy
     );
     SDL_SetTextureScaleMode(frame, SDL_SCALEMODE_NEAREST);
     SDL_SetTextureBlendMode(frame, SDL_BLENDMODE_NONE);
@@ -108,9 +108,9 @@ int main(int argc, char* argv[]) {
     SDL_SetWindowRelativeMouseMode(window, true);
 
     cubemap_texture_t cubemap = {
-        Texture::Load("resource/cubemap_5/px.png"), Texture::Load("resource/cubemap_5/nx.png"),
-        Texture::Load("resource/cubemap_5/py.png"), Texture::Load("resource/cubemap_5/ny.png"),
-        Texture::Load("resource/cubemap_5/pz.png"), Texture::Load("resource/cubemap_5/nz.png")
+        Texture::Load("resource/cubemap_1/px.png"), Texture::Load("resource/cubemap_1/nx.png"),
+        Texture::Load("resource/cubemap_1/py.png"), Texture::Load("resource/cubemap_1/ny.png"),
+        Texture::Load("resource/cubemap_1/pz.png"), Texture::Load("resource/cubemap_1/nz.png")
     };
 
     StdForwardVertex1 vs;
@@ -124,8 +124,8 @@ int main(int argc, char* argv[]) {
     AABB cubemap_aabb(glm::vec3(0.f, 0.f, -0.5f), glm::vec3(1.03f));
     fs.cubemap_aabb = &cubemap_aabb;
 
-    // auto texture         = Texture::Load("resource/uv_debug.png");
-    // fs.texture           = &texture;
+    auto texture    = Texture::Load("resource/uv_debug_rough.png");
+    fs.texture      = &texture;
 
     fs.shadowmap    = const_cast<f32*>(shadowbuffer.GetDepthBuffer().GetData());
     fs.light_view   = shadow_camera.GetViewMatrix();
@@ -240,16 +240,15 @@ int main(int argc, char* argv[]) {
 
         // glm::mat4 skybox_rotation = glm::rotate(glm::mat4(1.f), dt * 0.2f,
         // rotation_axis);
-        // framebuffer.render_cubemap_fullscreen(proj, view, cubemap);
+        framebuffer.render_cubemap_fullscreen(proj, view, cubemap);
 
         { // SDL side
             SDL_UpdateTexture(frame, nullptr, framebuffer.GetData(), framebuffer.GetPitch());
             SDL_RenderTexture(renderer, frame, nullptr, nullptr);
 
             SDL_SetRenderDrawColorFloat(renderer, 1.f, 1.f, 1.f, 1.f);
-            SDL_RenderDebugText(
-                renderer, 20, 20,
-                std::format("render: {}ms", time_elapsed.count() / frames / 1E6f).c_str()
+            SDL_RenderDebugTextFormat(
+                renderer, 20, 20, "render: %fms", time_elapsed.count() / frames / 1E6f
             );
             SDL_SetRenderDrawColorFloat(renderer, 0.f, 0.f, 0.f, 1.f);
 
