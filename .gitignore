@@ -33,3 +33,5 @@
 .vs
 bin/
 .vscode
+scenes
+resource

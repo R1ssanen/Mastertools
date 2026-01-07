@@ -1,42 +1,44 @@
-﻿cmake_minimum_required (VERSION 4.0)
-project ("Mastertools"
-	VERSION 2025.1.0
-	LANGUAGES CXX
-	DESCRIPTION "Software renderer"
+﻿cmake_minimum_required(VERSION 3.10)
+project(mastertools VERSION 2026.1.0 LANGUAGES C)
+
+add_executable(mastertools)
+target_sources(mastertools PRIVATE
+	"mastertools/src/main.c"
+    "mastertools/src/allocator.c"
+    "mastertools/src/engine.c"
+    "mastertools/src/scene/scene.c"
+    "mastertools/src/scene/entity.c"
+    "mastertools/src/utility/mstring.c"
+    "mastertools/src/utility/file.c"
+
+    "mastertools/src/backend/windows/library.c"
+    "mastertools/src/backend/sdl_window.c"
+
+    "vendor/cJSON.c"
 )
 
-add_executable (${PROJECT_NAME}
-	"src/main.cpp"
-	"src/camera.cpp"
-	"src/plane.cpp"
-	"src/loader.cpp"
-	"src/clipping.cpp"
+target_include_directories(mastertools PRIVATE "mastertools/include" "vendor")
+
+set_target_properties (mastertools PROPERTIES
+	C_STANDARD 99
+	C_STANDARD_REQUIRED TRUE
+	C_EXTENSIONS FALSE
 )
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-	set (OPTIMIZATIONS "-g")
-else ()
-	set (OPTIMIZATIONS "-O3" "-march=native")
-endif ()
-
-target_include_directories (${PROJECT_NAME} PRIVATE "include")
-target_compile_options (${PROJECT_NAME} PRIVATE ${OPTIMIZATIONS} -Wall -Wextra -Wpedantic)
-
-set_target_properties (${PROJECT_NAME} PROPERTIES
-	VERSION ${PROJECT_VERSION}
-	EXPORT_COMPILE_COMMANDS TRUE
-	CXX_STANDARD 20
-	CXX_STANDARD_REQUIRED TRUE
-	CXX_EXTENSIONS FALSE
+target_compile_options(mastertools PRIVATE
+    -Wall -Wextra -Wpedantic -march=native -mavx2 -mfma
+    $<$<CONFIG:Debug>: -g -O0>
+    $<$<CONFIG:Release>: -O3>
 )
 
-# external dependencies
-add_subdirectory ("vendor/SDL" EXCLUDE_FROM_ALL)
-add_subdirectory ("vendor/glm" EXCLUDE_FROM_ALL)
+target_compile_definitions(mastertools PRIVATE MT_ANSI_COLORS)
 
-target_link_libraries (${PROJECT_NAME} PRIVATE glm::glm SDL3::SDL3)
+find_package(SDL3 REQUIRED)
+add_subdirectory("vendor/rohan" EXCLUDE_FROM_ALL)
 
-add_custom_command (TARGET ${PROJECT_NAME}
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:SDL3::SDL3> ${CMAKE_CURRENT_BINARY_DIR}
-)
+target_link_libraries(mastertools PRIVATE m SDL3::SDL3 rohan)
+
+# add_custom_command (TARGET mastertools
+#     POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:SDL3::SDL3> ${CMAKE_CURRENT_BINARY_DIR}
+# )
