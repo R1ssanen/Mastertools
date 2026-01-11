@@ -8,7 +8,7 @@
 #include "logging.h"
 #include "types.h"
 
-bool mt_read_file(mstring path, byte **buffer, size_t *count)
+bool mt_file_read(mt_string_view path, byte **buffer, size_t *count)
 {
     FILE *file = fopen(path.str, "rb");
     if (!file)
@@ -41,26 +41,72 @@ bool mt_read_file(mstring path, byte **buffer, size_t *count)
     return true;
 }
 
-mstring mt_get_file_name(mstring path)
+bool mt_file_split_directory_name(mt_string_view path, mt_string *directory, mt_string *name)
 {
-    const char *a = strrchr(path.str, '/');
-    const char *b = strrchr(path.str, '\\');
-    const char *found = a > b ? a : b;
-
-    if (!found)
+    char last = path.str[path.len - 1];
+    if ((last == '/') || (last == '\\'))
     {
-        return path;
+        if (directory)
+        {
+            *directory = mt_string_copy_view(path);
+        }
+
+        return false;
     }
 
-    return mt_mstring_copy_raw(found + 1);
+    for (size_t i = path.len - 1; i > 0; --i)
+    {
+        char left = path.str[i - 1];
+        if ((left == '/') || (left == '\\'))
+        {
+            if (name)
+            {
+                *name = mt_string_copy_range_view(path, i, path.len - i);
+            }
+            if (directory)
+            {
+                *directory = mt_string_copy_range_view(path, 0, i);
+            }
+
+            return true;
+        }
+    }
+
+    if (name)
+    {
+        *name = mt_string_copy_view(path);
+    }
+    if (directory)
+    {
+        *directory = mt_string_create(0);
+    }
+
+    return true;
 }
 
-mstring mt_get_file_extension(mstring path)
+bool mt_file_get_extension(mt_string_view path, mt_string *extension)
 {
-    return path;
-}
+    for (size_t i = path.len - 1; i > 0; --i)
+    {
+        char curr = path.str[i];
+        if ((curr == '/') || (curr == '\\'))
+        {
+            return false;
+        }
+        else if (curr != '.')
+        {
+            continue;
+        }
 
-mstring mt_get_directory(mstring path)
-{
-    return path;
+        char left = path.str[i - 1];
+        if ((left == '/') || (left == '\\'))
+        {
+            return false;
+        }
+
+        *extension = mt_string_copy_range_view(path, i, path.len - i);
+        return true;
+    }
+
+    return false;
 }

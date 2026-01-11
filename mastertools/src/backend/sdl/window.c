@@ -13,7 +13,7 @@ struct mt_window
     SDL_Texture *target;
 };
 
-mt_window *mt_window_create(mt_allocator *alloc, mstring title, int w, int h, int flags)
+mt_window *mt_window_create(mt_allocator *alloc, char *title, int w, int h, int flags)
 {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_VIDEO))
     {
@@ -26,7 +26,7 @@ mt_window *mt_window_create(mt_allocator *alloc, mstring title, int w, int h, in
     int sdl_flags = (flags & MT_WINDOW_RESIZABLE) ? SDL_WINDOW_RESIZABLE : 0;
     sdl_flags |= (flags & MT_WINDOW_FULLSCREEN) ? SDL_WINDOW_FULLSCREEN : 0;
 
-    window->window = SDL_CreateWindow(title.str, w, h, sdl_flags);
+    window->window = SDL_CreateWindow(title, w, h, sdl_flags);
     if (!window->window)
     {
         LERROR("Could not create SDL3 window: %s", SDL_GetError());
@@ -47,6 +47,9 @@ mt_window *mt_window_create(mt_allocator *alloc, mstring title, int w, int h, in
         return NULL;
     }
 
+    SDL_SetTextureBlendMode(window->target, SDL_BLENDMODE_NONE);
+    SDL_SetTextureScaleMode(window->target, SDL_SCALEMODE_NEAREST);
+
     return window;
 }
 
@@ -61,4 +64,11 @@ void mt_window_free(mt_window *window)
 void mt_window_resize(mt_window *window, int w, int h)
 {
     SDL_SetWindowSize(window->window, w, h);
+}
+
+void mt_window_render(mt_window *window, int *pixels, int w)
+{
+    SDL_UpdateTexture(window->target, NULL, pixels, w * sizeof(*pixels));
+    SDL_RenderTexture(window->renderer, window->target, NULL, NULL);
+    SDL_RenderPresent(window->renderer);
 }

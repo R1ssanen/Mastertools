@@ -7,10 +7,10 @@ typedef struct mt_mesh mt_mesh;
 struct mt_mesh
 {
     float *vertices;
-    int *indices;
     size_t vertex_count;
+    uint *indices;
     size_t index_count;
-    int attribute_count;
+    uint attribute_count;
 };
 
 #endif

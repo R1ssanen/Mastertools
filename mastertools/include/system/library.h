@@ -7,14 +7,14 @@
 typedef struct mt_library mt_library;
 struct mt_library
 {
-    mstring path;
+    mt_string path;
     void *handle;
 };
 
-bool load_library(mstring path, mt_library *lib);
+bool mt_library_load(mt_string_view path, mt_library *lib);
 
-void *load_library_symbol(const mt_library *lib, mstring name);
+void *mt_library_load_symbol(const mt_library *lib, mt_string_view name);
 
-bool free_library(mt_library *lib);
+bool mt_library_free(mt_library *lib);
 
 #endif

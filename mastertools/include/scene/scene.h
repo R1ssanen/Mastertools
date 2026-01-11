@@ -5,7 +5,7 @@
 #include "utility/mstring.h"
 
 #if !defined MT_MAX_SCENE_NODES
-#define MT_MAX_SCENE_NODES 32
+#define MT_MAX_SCENE_NODES 64
 #endif
 
 struct mt_allocator;
@@ -15,12 +15,12 @@ typedef struct mt_scene mt_scene;
 struct mt_scene
 {
     struct mt_node *nodes[MT_MAX_SCENE_NODES];
-    mstring name, path;
+    mt_string name, path;
     struct mt_node *root;
     int node_count;
 };
 
-bool mt_scene_load(struct mt_allocator *alloc, mstring path, mt_scene *scene);
+bool mt_scene_load(struct mt_allocator *alloc, mt_string_view path, mt_scene *scene);
 
 void mt_scene_free(mt_scene *scene);
 

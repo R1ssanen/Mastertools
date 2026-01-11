@@ -18,7 +18,7 @@ struct mt_engine
     bool running;
 };
 
-bool mt_engine_create(mstring level_path, mt_engine *engine);
+bool mt_engine_create(mt_string_view level_path, mt_engine *engine);
 
 void mt_engine_free(mt_engine *engine);
 

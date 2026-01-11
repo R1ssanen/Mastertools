@@ -4,12 +4,10 @@
 #include "mstring.h"
 #include "types.h"
 
-bool mt_read_file(mstring path, byte **buffer, size_t *count);
+bool mt_file_read(mt_string_view path, byte **buffer, size_t *count);
 
-mstring mt_get_file_name(mstring path);
+bool mt_file_split_directory_name(mt_string_view path, mt_string *directory, mt_string *filename);
 
-mstring mt_get_file_extension(mstring path);
-
-mstring mt_get_directory(mstring path);
+bool mt_file_get_extension(mt_string_view path, mt_string *extension);
 
 #endif

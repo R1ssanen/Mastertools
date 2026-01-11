@@ -4,6 +4,7 @@
 #include "simd/rvm.h"
 #include "types.h"
 
+#include <immintrin.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,7 +33,7 @@ static inline void *try_allocate(mt_allocator *alloc, void **it, size_t count, s
     void *bucket = *it;
     if (!bucket)
     {
-        bucket = rvm_allocate(count + sizeof(header), align);
+        bucket = _mm_malloc(count + sizeof(header), align);
         header *head = bucket;
         head->count = count;
         head->free = false;
@@ -46,8 +47,8 @@ static inline void *try_allocate(mt_allocator *alloc, void **it, size_t count, s
     {
         if (head->count < count)
         {
-            rvm_deallocate(head);
-            head = rvm_allocate(count + sizeof(header), align);
+            _mm_free(head);
+            head = _mm_malloc(count + sizeof(header), align);
             head->count = count;
             *it = head + 1;
         }
@@ -98,7 +99,7 @@ void free_allocator(mt_allocator *alloc)
         if (bucket)
         {
             header *header = get_header(bucket);
-            rvm_deallocate(header);
+            _mm_free(header);
         }
     }
 }

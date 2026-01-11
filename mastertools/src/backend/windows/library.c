@@ -6,9 +6,8 @@
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
 
-bool load_library(mstring path, mt_library *lib)
+bool mt_library_load(mt_string_view path, mt_library *lib)
 {
-    lib->path = mt_mstring_copy(path);
     lib->handle = (void *)LoadLibraryA((LPCSTR)path.str);
     if (!lib->handle)
     {
@@ -16,10 +15,11 @@ bool load_library(mstring path, mt_library *lib)
         return false;
     }
 
+    lib->path = mt_string_copy_view(path);
     return true;
 }
 
-void *load_library_symbol(const mt_library *lib, mstring name)
+void *mt_library_load_symbol(const mt_library *lib, mt_string_view name)
 {
     FARPROC symbol = GetProcAddress((HMODULE)lib->handle, (LPCSTR)name.str);
     if (!symbol)
@@ -31,7 +31,7 @@ void *load_library_symbol(const mt_library *lib, mstring name)
     return (void *)symbol;
 }
 
-bool free_library(mt_library *lib)
+bool mt_library_free(mt_library *lib)
 {
     if (FreeLibrary((HMODULE)lib->handle) == 0)
     {
@@ -39,7 +39,7 @@ bool free_library(mt_library *lib)
         return false;
     }
 
-    mt_mstring_free(lib->path);
+    mt_string_free(&lib->path);
     return true;
 }
 

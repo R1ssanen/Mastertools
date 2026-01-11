@@ -3,14 +3,9 @@
 
 #include <stdio.h>
 
-#include "allocator.h"
-#include "scene/entity.h"
 #include "types.h"
+#include "utility/mstring.h"
 
-static inline mt_entity *load_entity_wavefront_obj(mt_allocator *alloc, const char *path)
-{
-    mt_entity *entity = allocate(alloc, sizeof(mt_entity));
-    return entity;
-}
+struct mt_entity *mt_load_wavefront_obj(mt_string_view path);
 
 #endif

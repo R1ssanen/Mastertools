@@ -24,4 +24,6 @@ struct mt_node
     int kind;
 };
 
+bool mt_node_insert_child(mt_node *parent, mt_node *child);
+
 #endif
