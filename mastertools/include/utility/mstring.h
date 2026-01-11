@@ -10,8 +10,7 @@ typedef struct mt_string mt_string;
 struct mt_string
 {
     char *str;
-    uint len;
-    uint capacity;
+    size_t len;
 };
 
 // non-owned
@@ -54,15 +53,15 @@ static inline mt_string mt_string_copy_range_view(mt_string_view view, size_t st
     return mt_string_copy_range_raw(view.str, start, count);
 }
 
-bool mt_string_resize(mt_string *str, size_t new_len);
+void mt_string_resize(mt_string *str, size_t new_len);
 
-bool mt_string_append(mt_string *str, char c);
+void mt_string_append(mt_string *str, char c);
 
-bool mt_string_concat(mt_string *str_0, const mt_string str_1);
+void mt_string_concat(mt_string *str_0, const mt_string str_1);
 
-bool mt_string_concat_view(mt_string *str, mt_string_view view);
+void mt_string_concat_view(mt_string *str, mt_string_view view);
 
-bool mt_string_concat_raw(mt_string *str, const char *raw);
+void mt_string_concat_raw(mt_string *str, const char *raw);
 
 // refers to slice ( str[start], str[start + count] )
 static inline mt_string_view mt_string_refer_range_raw(const char *str, size_t start, size_t count)

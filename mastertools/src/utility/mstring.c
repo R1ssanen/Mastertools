@@ -3,33 +3,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "logging.h"
 #include "types.h"
 
-static inline bool string_resize_no_init(mt_string *str, size_t new_len)
+static inline void string_resize_no_init(mt_string *str, size_t new_len)
 {
     char *new_str = realloc(str, new_len + 1);
     if (!new_str)
     {
-        return false;
+        LFATAL("Memory reallocation for string failed");
     }
 
     str->str = new_str;
     str->str[new_len] = '\0';
     str->len = new_len;
-    return true;
 }
 
-static inline bool string_concat(mt_string *str, const char *raw, size_t raw_len)
+static inline void string_concat(mt_string *str, const char *raw, size_t raw_len)
 {
     size_t old_len = str->len;
-    if (!string_resize_no_init(str, old_len + raw_len))
-    {
-        return false;
-    }
-
+    string_resize_no_init(str, old_len + raw_len);
     memcpy(str->str + old_len, raw, raw_len);
     str->str[old_len + raw_len] = '\0';
-    return true;
 }
 
 // string
@@ -37,82 +32,74 @@ static inline bool string_concat(mt_string *str, const char *raw, size_t raw_len
 mt_string mt_string_create(size_t len)
 {
     char *str = malloc(len + 1);
-    if (str)
+    if (!str)
     {
-        memset(str, '`', len);
-        str[len] = '\0';
-        return (mt_string){.str = str, .len = len};
+        LFATAL("Memory allocation for string failed");
     }
 
-    return (mt_string){.str = NULL, .len = 0};
+    memset(str, '`', len);
+    str[len] = '\0';
+    return (mt_string){.str = str, .len = len};
 }
 
 void mt_string_free(mt_string *str)
 {
     free(str->str);
-    str->len = 0;
-    str->capacity = 0;
-    str->str = NULL;
+
+#if defined(MT_SANITIZE_FREE)
+    memset(str, 0, sizeof(*str));
+#endif
 }
 
 mt_string mt_string_copy_range_raw(const char *str, size_t start, size_t count)
 {
     char *buffer = malloc(count + 1);
-    if (buffer)
+    if (!buffer)
     {
-        memcpy(buffer, str + start, count);
-        buffer[count] = '\0';
-        return (mt_string){.str = buffer, .len = count};
+        LFATAL("Memory allocation for string failed");
     }
 
-    return (mt_string){.str = NULL, .len = 0};
+    memcpy(buffer, str + start, count);
+    buffer[count] = '\0';
+    return (mt_string){.str = buffer, .len = count};
 }
 
-bool mt_string_resize(mt_string *str, size_t new_len)
+void mt_string_resize(mt_string *str, size_t new_len)
 {
     size_t old_len = str->len;
     if (old_len == new_len)
     {
-        return true;
+        return;
     }
 
-    if (!string_resize_no_init(str->str, new_len))
-    {
-        return false;
-    }
-    else if (new_len > old_len)
+    string_resize_no_init(str, new_len);
+
+    if (new_len > old_len)
     {
         memset(str->str + old_len, '`', new_len - old_len);
     }
-
-    return true;
 }
 
-bool mt_string_append(mt_string *str, char c)
+void mt_string_append(mt_string *str, char c)
 {
     size_t old_len = str->len;
-    if (!string_resize_no_init(str, old_len + 1))
-    {
-        return false;
-    }
-
+    string_resize_no_init(str, old_len + 1);
     str->str[old_len] = c;
-    return true;
 }
 
-bool mt_string_concat(mt_string *str_0, const mt_string str_1)
+void mt_string_concat(mt_string *str_0, const mt_string str_1)
 {
-    return string_concat(str_0, str_1.str, str_1.len);
+    string_concat(str_0, str_1.str, str_1.len);
 }
 
-bool mt_string_concat_view(mt_string *str, mt_string_view view)
+void mt_string_concat_view(mt_string *str, mt_string_view view)
 {
-    return string_concat(str, view.str, view.len);
+    string_concat(str, view.str, view.len);
 }
 
-bool mt_string_concat_raw(mt_string *str, const char *raw)
+void mt_string_concat_raw(mt_string *str, const char *raw)
 {
-    return string_concat(str, raw, strlen(raw));
+    string_concat(str, raw, strlen(raw));
 }
 
 bool mt_string_equal_vv(mt_string_view view_0, mt_string_view view_1)
@@ -122,7 +109,7 @@ bool mt_string_equal_vv(mt_string_view view_0, mt_string_view view_1)
         return false;
     }
 
-    for (int i = 0; i < view_0.len; ++i)
+    for (size_t i = 0; i < view_0.len; ++i)
     {
         if (view_0.str[i] != view_1.str[i])
         {

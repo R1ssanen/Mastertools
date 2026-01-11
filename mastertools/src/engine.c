@@ -1,6 +1,5 @@
 #include "engine.h"
 
-#include "allocator.h"
 #include "scene/scene.h"
 #include "types.h"
 #include "window.h"
@@ -12,24 +11,26 @@ bool mt_engine_create(mt_string_view level_path, mt_engine *engine)
 {
     rohan_initialize();
 
-    engine->alloc = create_allocator();
     engine->running = true;
     engine->delta_time = 0.0;
 
-    engine->window = mt_window_create(&engine->alloc, "bingus", 1440, 900, MT_WINDOW_RESIZABLE);
+    engine->window = mt_window_create("bingus", 1440, 900, MT_WINDOW_RESIZABLE);
     if (!engine->window)
     {
         return false;
     }
 
-    return mt_scene_load(&engine->alloc, level_path, &engine->scene);
+    return mt_scene_load(level_path, &engine->scene);
 }
 
 void mt_engine_free(mt_engine *engine)
 {
     mt_scene_free(&engine->scene);
     mt_window_free(engine->window);
-    free_allocator(&engine->alloc);
+
+#if defined(MT_SANITIZE_FREE)
+    memset(engine, 0, sizeof(*engine));
+#endif
 }
 
 #include "logging.h"
@@ -43,8 +44,8 @@ bool mt_engine_run(mt_engine *engine)
 
     int *pixels = _mm_malloc(1440 * 900 * sizeof(int), 32);
 
-    mt_entity *entity = engine->scene.root->children[0]->data;
-
+    mt_node *node = mt_array_get(&engine->scene.root->children, mt_node *, 0);
+    mt_entity *entity = node->data;
     entity->shader.set_uniform(entity->shader.instance, 0, &pixels, sizeof(pixels));
 
     while (engine->running)

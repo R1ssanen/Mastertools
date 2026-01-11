@@ -2,7 +2,6 @@
 
 #include <SDL3/SDL.h>
 
-#include "allocator.h"
 #include "logging.h"
 #include "utility/mstring.h"
 
@@ -13,7 +12,7 @@ struct mt_window
     SDL_Texture *target;
 };
 
-mt_window *mt_window_create(mt_allocator *alloc, char *title, int w, int h, int flags)
+mt_window *mt_window_create(char *title, int w, int h, int flags)
 {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_VIDEO))
     {
@@ -21,7 +20,11 @@ mt_window *mt_window_create(mt_allocator *alloc, char *title, int w, int h, int 
         return NULL;
     }
 
-    mt_window *window = allocate(alloc, sizeof(mt_window));
+    mt_window *window = malloc(sizeof(mt_window));
+    if (!window)
+    {
+        LFATAL("Memory allocation for window failed");
+    }
 
     int sdl_flags = (flags & MT_WINDOW_RESIZABLE) ? SDL_WINDOW_RESIZABLE : 0;
     sdl_flags |= (flags & MT_WINDOW_FULLSCREEN) ? SDL_WINDOW_FULLSCREEN : 0;
@@ -59,6 +62,8 @@ void mt_window_free(mt_window *window)
     SDL_DestroyWindow(window->window);
     SDL_PumpEvents();
     SDL_Quit();
+
+    free(window);
 }
 
 void mt_window_resize(mt_window *window, int w, int h)

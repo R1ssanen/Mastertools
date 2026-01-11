@@ -2,17 +2,19 @@
 #define MASTERTOOLS_LOGGING_H_
 
 #include <stdio.h>
+#include <stdlib.h>
 
-#if defined MT_ANSI_COLORS
+#if defined(MT_ANSI_COLORS)
 #define MT_TEXT_WHITE(text) "\x1b[37m" text "\x1b[0m"
-#define MT_TEXT_YELLOW(text) "\x1b[30;43m" text "\x1b[0m"
-#define MT_TEXT_RED_BOLD(text) "\x1b[30;41m" text "\x1b[0m"
 #define MT_TEXT_CYAN(text) "\x1b[36m" text "\x1b[0m"
+#define MT_TEXT_YELLOW_BOLD(text) "\x1b[30;43m" text "\x1b[0m"
+#define MT_TEXT_RED_BOLD(text) "\x1b[30;41m" text "\x1b[0m"
+#define MT_TEXT_PURPLE_BOLD(text) "\x1b[30;45m" text "\x1b[0m"
 #else
 #define MT_TEXT_WHITE(text) text
-#define MT_TEXT_YELLOW(text) text
-#define MT_TEXT_RED_BOLD(text) text
 #define MT_TEXT_CYAN(text) text
+#define MT_TEXT_YELLOW_BOLD(text) text
+#define MT_TEXT_RED_BOLD(text) text
 #endif
 
 #define LINFO(...)                                                                                                     \
@@ -25,7 +27,7 @@
 #define LWARN(...)                                                                                                     \
     do                                                                                                                 \
     {                                                                                                                  \
-        fprintf(stderr, MT_TEXT_YELLOW("[ WARN ]") "  " __VA_ARGS__);                                                  \
+        fprintf(stderr, MT_TEXT_YELLOW_BOLD("[ WARN ]") "  " __VA_ARGS__);                                             \
         fputc('\n', stderr);                                                                                           \
     } while (0)
 
@@ -36,7 +38,15 @@
         fprintf(stderr, " (%s:%d)\n", __func__, __LINE__);                                                             \
     } while (0)
 
-#if !defined NDEBUG
+#define LFATAL(...)                                                                                                    \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        fprintf(stderr, MT_TEXT_PURPLE_BOLD("[ FATAL ]") " " __VA_ARGS__);                                             \
+        fprintf(stderr, " (%s:%d)\n", __func__, __LINE__);                                                             \
+        abort();                                                                                                       \
+    } while (0)
+
+#if !defined(NDEBUG)
 #define LDEBUG(...)                                                                                                    \
     do                                                                                                                 \
     {                                                                                                                  \

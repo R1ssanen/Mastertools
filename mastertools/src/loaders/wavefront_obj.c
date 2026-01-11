@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "scene/entity.h"
+#include "utility/array.h"
 #include "utility/file.h"
 #include "utility/mstring.h"
 
@@ -108,30 +109,6 @@ static inline char *next(tokenizer *tokenizer)
 
 mt_entity *mt_load_wavefront_obj(mt_string_view path)
 {
-    // char test[] = "ab/b/c d/eg/f g/h/ia";
-    // size_t offs = 0;
-    // char *test_indices = split_by_delim(test, &offs, ' ', '\0');
-    // for (; test_indices != NULL; test_indices = split_by_delim(test, &offs, ' ', '\0'))
-    // {
-    //     size_t offs_2 = 0;
-    //     char *test_index = split_by_delim(test_indices, &offs_2, '/', '\0');
-    //     for (; test_index != NULL; test_index = split_by_delim(test_indices, &offs_2, '/', '\0'))
-    //     {
-    //         printf("%s ", test_index);
-    //     }
-    //     putchar('\n');
-    // }
-    // return NULL;
-
-    // char test[] = "a//";
-    // tokenizer test_tok = {.src = test, .offset = 0, .delimiter = '/'};
-    // char *t;
-    // while ((t = next(&test_tok)))
-    // {
-    //     puts(t);
-    // }
-    // return NULL;
-
     char *buffer;
     size_t len;
     if (!mt_file_read(path, (byte **)(&buffer), &len))
@@ -139,13 +116,8 @@ mt_entity *mt_load_wavefront_obj(mt_string_view path)
         return NULL;
     }
 
-    // float vertices[1024 * 20 * 3];
-    float *vertices = malloc(1024 * 20 * 3 * sizeof(float));
-    size_t vertex_count = 0;
-
-    // int indices[1024 * 20];
-    int *indices = malloc(1024 * 20 * sizeof(int));
-    size_t index_count = 0;
+    mt_array vertices = mt_array_create(sizeof(float));
+    mt_array indices = mt_array_create(sizeof(int));
 
     tokenizer line_tok = {.src = buffer, .offset = 0, .delimiter = '\n'};
     char *line;
@@ -159,7 +131,8 @@ mt_entity *mt_load_wavefront_obj(mt_string_view path)
             char *vertex;
             while ((vertex = next(&vertex_tok)))
             {
-                vertices[vertex_count++] = strtof(vertex, NULL);
+                float coord = strtof(vertex, NULL);
+                mt_array_push(&vertices, &coord);
             }
 
             // vertices[vertex_count++] = 1.f; // w
@@ -182,29 +155,26 @@ mt_entity *mt_load_wavefront_obj(mt_string_view path)
                 // {
                 //     puts(index);
                 // }
-                indices[index_count++] = strtoul(next(&index_tok), NULL, 10);
+                int id = strtoul(next(&index_tok), NULL, 10);
+                mt_array_push(&indices, &id);
             }
         }
     }
 
-    printf("vertex count: %zu\n", vertex_count / 3);
-    printf("triangle count: %zu\n", index_count / 3);
-
     free(buffer);
 
-    mt_mesh mesh;
-    mesh.attribute_count = 1;
-
-    mesh.vertices = malloc(vertex_count * sizeof(float));
-    memcpy(mesh.vertices, vertices, vertex_count * sizeof(float));
-    mesh.vertex_count = vertex_count;
-
-    mesh.indices = malloc(index_count * sizeof(uint));
-    mesh.index_count = index_count;
-    memcpy(mesh.indices, indices, index_count * sizeof(float));
+    printf("vertex count: %zu\n", vertices.size / 3);
+    printf("triangle count: %zu\n", indices.size / 3);
 
     mt_entity *entity = malloc(sizeof(mt_entity));
-    entity->meshes[0] = mesh;
+    entity->meshes = mt_array_create(sizeof(mt_mesh));
+
+    mt_mesh mesh = {
+        .vertices = vertices,
+        .indices = indices,
+        .attribute_count = 1,
+    };
+    mt_array_push(&entity->meshes, &mesh);
 
     return entity;
 }

@@ -3,16 +3,20 @@ project(mastertools VERSION 2026.1.0 LANGUAGES C)
 
 add_executable(mastertools
 	"mastertools/src/main.c"
-    "mastertools/src/allocator.c"
     "mastertools/src/engine.c"
-    "mastertools/src/scene/scene.c"
-    "mastertools/src/scene/entity.c"
+
     "mastertools/src/utility/mstring.c"
     "mastertools/src/utility/file.c"
+    "mastertools/src/utility/array.c"
+
     "mastertools/src/loaders/wavefront_obj.c"
 
+    "mastertools/src/scene/scene.c"
+    "mastertools/src/scene/entity.c"
+    "mastertools/src/scene/mesh.c"
+    "mastertools/src/scene/node.c"
+
     "mastertools/src/backend/windows/library.c"
-    
     "mastertools/src/backend/sdl/window.c"
 
     "vendor/cJSON.c"
@@ -20,7 +24,7 @@ add_executable(mastertools
 
 target_include_directories(mastertools PRIVATE "mastertools/include" "vendor")
 
-target_compile_definitions(mastertools PRIVATE MT_ANSI_COLORS)
+target_compile_definitions(mastertools PRIVATE MT_ANSI_COLORS MT_SANITIZE_FREE)
 
 set_target_properties (mastertools PROPERTIES
 	C_STANDARD 99
@@ -30,7 +34,7 @@ set_target_properties (mastertools PROPERTIES
 
 target_compile_options(mastertools PRIVATE
     -Wall -Wextra -Wpedantic -march=native -mavx2 -mfma
-    $<$<CONFIG:Debug>: -g -O0>
+    $<$<CONFIG:Debug>: -g -O0 -fno-inline -fno-omit-frame-pointer>
     $<$<CONFIG:Release>: -O3>
 )
 

@@ -40,6 +40,11 @@ bool mt_library_free(mt_library *lib)
     }
 
     mt_string_free(&lib->path);
+
+#if defined(MT_SANITIZE_FREE)
+    memset(lib, 0, sizeof(*lib));
+#endif
+
     return true;
 }
 

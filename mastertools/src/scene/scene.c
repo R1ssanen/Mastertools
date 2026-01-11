@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "allocator.h"
 #include "cJSON.h"
 #include "logging.h"
 #include "scene/entity.h"
@@ -13,46 +12,42 @@
 #include "utility/file.h"
 #include "utility/hash.h"
 
-static mt_node *parse_scene_json(cJSON *object, mt_allocator *alloc, mt_scene *scene, mt_node *parent)
+static mt_node *parse_scene_json(cJSON *object, mt_scene *scene, mt_node *parent)
 {
     cJSON *type = cJSON_GetObjectItemCaseSensitive(object, "type");
     if (!type)
     {
         LERROR("Scene node must have a type");
-        return NULL;
+        return false;
     }
 
-    mt_node *node = allocate(alloc, sizeof(mt_node));
+    mt_node *node = mt_node_create();
     node->parent = parent;
-    node->child_count = 0;
 
     if (parent)
     {
-        if (parent->child_count >= MT_MAX_NODE_CHILDREN)
-        {
-            LERROR("MT_MAX_NODE_CHILDREN exceeded");
-            exit(1);
-        }
-        parent->children[parent->child_count++] = node;
+        mt_array_push(&parent->children, &node);
     }
 
     if (strcmp(type->valuestring, "root") == 0)
     {
+        node->kind = MT_NODE_ROOT;
         node->data = NULL;
     }
     else if (strcmp(type->valuestring, "entity") == 0)
     {
-        node->data = parse_node_entity_json(alloc, object);
+        node->kind = MT_NODE_ENTITY;
+        node->data = parse_node_entity_json(object);
     }
     else if (strcmp(type->valuestring, "camera") == 0)
     {
+        node->kind = MT_NODE_CAMERA;
         LERROR("Not implemented");
         exit(1);
     }
     else
     {
         LERROR("Unknown scene node type '%s'", type->valuestring);
-        deallocate(node);
         return NULL;
     }
 
@@ -61,25 +56,15 @@ static mt_node *parse_scene_json(cJSON *object, mt_allocator *alloc, mt_scene *s
     {
         for (cJSON *child = children->child; child != NULL; child = child->next)
         {
-            if (node->child_count >= MT_MAX_NODE_CHILDREN)
-            {
-                LERROR("MT_MAX_NODE_CHILDREN exceeded");
-                exit(1);
-            }
-            node->children[node->child_count++] = parse_scene_json(child, alloc, scene, node);
+            parse_scene_json(child, scene, node);
         }
     }
 
-    if (scene->node_count >= MT_MAX_SCENE_NODES)
-    {
-        LERROR("MT_MAX_SCENE_NODES exceeded");
-        exit(1);
-    }
-    scene->nodes[scene->node_count++] = node;
+    mt_array_push(&scene->nodes, &node);
     return node;
 }
 
-bool mt_scene_load(mt_allocator *alloc, mt_string_view path, mt_scene *scene)
+bool mt_scene_load(mt_string_view path, mt_scene *scene)
 {
     byte *buffer;
     size_t count;
@@ -91,13 +76,13 @@ bool mt_scene_load(mt_allocator *alloc, mt_string_view path, mt_scene *scene)
     scene->path = mt_string_copy_view(path);
     if (!mt_file_split_directory_name(path, NULL, &scene->name))
     {
-        LERROR("Resource path provided not valid");
+        LERROR("Scene path provided not valid");
+        return false;
     }
 
-    scene->node_count = 0;
-
     cJSON *root = cJSON_ParseWithLength((const char *)buffer, count);
-    scene->root = parse_scene_json(root, alloc, scene, NULL);
+    scene->nodes = mt_array_create(sizeof(mt_node *));
+    scene->root = parse_scene_json(root, scene, NULL);
 
     cJSON_Delete(root);
     free(buffer);
@@ -113,11 +98,13 @@ bool mt_scene_load(mt_allocator *alloc, mt_string_view path, mt_scene *scene)
 
 void mt_scene_free(mt_scene *scene)
 {
-    for (int i = 0; i < scene->node_count; ++i)
-    {
-        deallocate(scene->nodes[i]);
-    }
+    mt_node_free(scene->root);
+    mt_array_free(&scene->nodes);
 
     mt_string_free(&scene->name);
     mt_string_free(&scene->path);
+
+#if defined(MT_SANITIZE_FREE)
+    memset(scene, 0, sizeof(*scene));
+#endif
 }

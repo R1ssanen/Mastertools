@@ -5,7 +5,6 @@
 #include "utility/mstring.h"
 
 typedef struct mt_window mt_window;
-struct mt_allocator;
 
 enum
 {
@@ -14,7 +13,7 @@ enum
     MT_WINDOW_RESIZABLE,
 };
 
-mt_window *mt_window_create(struct mt_allocator *alloc, char *title, int w, int h, int flags);
+mt_window *mt_window_create(char *title, int w, int h, int flags);
 
 void mt_window_free(mt_window *window);
 

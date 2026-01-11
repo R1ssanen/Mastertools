@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "rohan.h"
+#include "utility/array.h"
 
 int main(void)
 {
@@ -23,8 +24,6 @@ int main(void)
 
     int status = 0;
     mt_engine engine;
-
-    // rohan_render_triangle_raw(NULL, 5, 34, 1234, 523, 67, 84, 214, NULL, NULL, NULL);
 
     if (!mt_engine_create(scene_path, &engine))
     {
