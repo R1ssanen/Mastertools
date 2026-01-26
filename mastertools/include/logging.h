@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if defined(MT_ANSI_COLORS)
+#ifdef MT_ANSI_COLORS
 #define MT_TEXT_WHITE(text) "\x1b[37m" text "\x1b[0m"
 #define MT_TEXT_CYAN(text) "\x1b[36m" text "\x1b[0m"
 #define MT_TEXT_YELLOW_BOLD(text) "\x1b[30;43m" text "\x1b[0m"
@@ -46,7 +46,7 @@
         abort();                                                                                                       \
     } while (0)
 
-#if !defined(NDEBUG)
+#ifndef NDEBUG
 #define LDEBUG(...)                                                                                                    \
     do                                                                                                                 \
     {                                                                                                                  \

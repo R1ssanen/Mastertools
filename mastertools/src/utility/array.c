@@ -28,7 +28,7 @@ void mt_array_free(mt_array *array)
     free(array->data);
 
 #if defined(MT_SANITIZE_FREE)
-    memset(array, 0, sizeof(*array));
+    memset(array, 0, sizeof *array);
 #endif
 }
 
@@ -58,7 +58,7 @@ void mt_array_resize(mt_array *array, size_t new_capacity)
     }
 }
 
-void mt_array_push(mt_array *restrict array, const void *restrict value)
+void *mt_array_push(mt_array *array, const void *value)
 {
     if (array->size == array->capacity)
     {
@@ -71,11 +71,18 @@ void mt_array_push(mt_array *restrict array, const void *restrict value)
         mt_array_resize(array, new_capacity);
     }
 
-    memcpy((char *)array->data + array->size * array->stride, value, array->stride);
+    void *element = (char *)array->data + array->size * array->stride;
     array->size += 1;
+
+    if (value)
+    {
+        memcpy(element, value, array->stride);
+    }
+
+    return element;
 }
 
-void mt_array_pop(mt_array *restrict array)
+void mt_array_pop(mt_array *array)
 {
     if (array->size > 0)
     {

@@ -2,12 +2,10 @@
 #define MASTERTOOLS_ENTITY_H_
 
 #include "mesh.h"
+#include "rohan.h"
+#include "system/library.h"
 #include "types.h"
 #include "utility/array.h"
-
-// rohan
-#include "shader.h"
-#include "system/library.h"
 
 struct cJSON;
 
@@ -15,7 +13,7 @@ typedef struct mt_entity mt_entity;
 struct mt_entity
 {
     rohan_shader_object shader;
-    mt_array meshes; // mt_mesh
+    mt_array_of(mt_mesh) meshes;
     mt_library shader_lib;
 };
 

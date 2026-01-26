@@ -4,8 +4,9 @@ project(mastertools VERSION 2026.1.0 LANGUAGES C)
 add_executable(mastertools
 	"mastertools/src/main.c"
     "mastertools/src/engine.c"
+    "mastertools/src/text.c"
 
-    "mastertools/src/utility/mstring.c"
+    "mastertools/src/utility/mtstring.c"
     "mastertools/src/utility/file.c"
     "mastertools/src/utility/array.c"
 
@@ -49,4 +50,3 @@ add_custom_command(TARGET mastertools
 )
 
 add_subdirectory("test_shader")
-add_subdirectory("test_shader_2")

@@ -8,7 +8,7 @@
 #include "logging.h"
 #include "types.h"
 
-bool mt_file_read(mt_string_view path, byte **buffer, size_t *count)
+bool mt_file_read(mt_string_view path, char **buffer, size_t *count)
 {
     FILE *file = fopen(path.str, "rb");
     if (!file)

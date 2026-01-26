@@ -3,7 +3,7 @@
 
 #include "utility/array.h"
 
-enum
+enum mt_node_kind
 {
     MT_NODE_INVALID,
     MT_NODE_ROOT,
@@ -15,16 +15,12 @@ enum
 typedef struct mt_node mt_node;
 struct mt_node
 {
-    mt_array children; // mt_node*
-    const struct mt_node *parent;
+    mt_array_of(uint32_t) children;
     void *data;
-    int kind;
+    uint32_t parent;
+    enum mt_node_kind kind;
 };
 
-mt_node *mt_node_create(void);
-
 void mt_node_free(mt_node *node);
-
-// bool mt_node_insert_child(mt_node *parent, mt_node *child);
 
 #endif

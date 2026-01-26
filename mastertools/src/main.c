@@ -4,7 +4,7 @@
 
 #include "scene/node.h"
 #include "utility/file.h"
-#include "utility/mstring.h"
+#include "utility/mtstring.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -12,19 +12,23 @@
 #include "rohan.h"
 #include "utility/array.h"
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    // if (argc == 1)
-    // {
-    //     LINFO("No map file provided.");
-    //     return 0;
-    // }
+    rohan_init();
 
-    mt_string_view scene_path = mt_string_refer_raw("resource/test_scene.json");
+    mt_string_view scene_path;
+    if (argc < 2)
+    {
+        LINFO("No map file provided, loading default.");
+        scene_path = mt_string_refer_raw("resource/test_scene.json");
+    }
+    else
+    {
+        scene_path = mt_string_refer_raw(argv[1]);
+    }
 
     int status = 0;
     mt_engine engine;
-
     if (!mt_engine_create(scene_path, &engine))
     {
         status = 1;

@@ -1,17 +1,19 @@
 #include "engine.h"
 
+#include <math.h>
+
+#include "rohan.h"
 #include "scene/scene.h"
+#include "system/text.h"
 #include "types.h"
 #include "window.h"
 
-//
-#include "rohan.h"
+#define mt_set_uniform(shader, index, value) (shader)->set_uniform((shader)->instance, index, value, sizeof *value)
 
-bool mt_engine_create(mt_string_view level_path, mt_engine *engine)
+bool mt_engine_create(mt_string_view level_path, struct mt_engine *engine)
 {
-    rohan_initialize();
-
     engine->running = true;
+    engine->frames_elapsed = 0;
     engine->delta_time = 0.0;
 
     engine->window = mt_window_create("bingus", 1440, 900, MT_WINDOW_RESIZABLE);
@@ -28,8 +30,8 @@ void mt_engine_free(mt_engine *engine)
     mt_scene_free(&engine->scene);
     mt_window_free(engine->window);
 
-#if defined(MT_SANITIZE_FREE)
-    memset(engine, 0, sizeof(*engine));
+#ifdef MT_SANITIZE_FREE
+    memset(engine, 0, sizeof *engine);
 #endif
 }
 
@@ -38,15 +40,22 @@ void mt_engine_free(mt_engine *engine)
 #include "scene/node.h"
 #include <SDL3/SDL.h>
 
-bool mt_engine_run(mt_engine *engine)
+bool mt_engine_run(struct mt_engine *engine)
 {
-    const int fps = 60;
+    const int fps = 144;
 
-    int *pixels = _mm_malloc(1440 * 900 * sizeof(int), 32);
+    int *pixels = _mm_malloc(1440 * 900 * sizeof *pixels, 32);
+    float *depth = _mm_malloc(1440 * 900 * sizeof *depth, 32);
 
-    mt_node *node = mt_array_get(&engine->scene.root->children, mt_node *, 0);
-    mt_entity *entity = node->data;
-    entity->shader.set_uniform(entity->shader.instance, 0, &pixels, sizeof(pixels));
+    mt_node node = mt_array_get(&engine->scene.nodes, mt_node, 0);
+    mt_entity *entity = node.data;
+    // entity->shader.set_uniform(entity->shader.instance, 0, &pixels, sizeof(pixels));
+    // entity->shader.set_uniform(entity->shader.instance, 1, &depth, sizeof(depth));
+
+    mt_set_uniform(&entity->shader, 0, &pixels);
+    mt_set_uniform(&entity->shader, 1, &depth);
+
+    char fps_buf[32];
 
     while (engine->running)
     {
@@ -60,31 +69,44 @@ bool mt_engine_run(mt_engine *engine)
             }
         }
 
-        // mt_mesh mesh = entity->meshes[0];
-        // float *vertices = malloc(mesh.vertex_count * sizeof(float));
-        // memcpy(vertices, mesh.vertices, mesh.vertex_count * sizeof(float));
+        mt_mesh mesh = mt_array_get(&entity->meshes, mt_mesh, 0);
+        float *vertices = malloc(mesh.vertices.size * sizeof(float));
+        memcpy(vertices, mesh.vertices.data, mesh.vertices.size * sizeof(float));
 
-        // const float size = 20.f;
-        // for (size_t i = 0; i < mesh.vertex_count; i += 3)
-        // {
-        //     vertices[i + 2] += 1.f;
-        //     vertices[i] /= vertices[i + 2];
-        //     vertices[i + 1] /= vertices[i + 2];
+        const float size = 700.f;
+        for (size_t i = 0; i < mesh.vertices.size; i += 3)
+        {
+            float x = vertices[i];
+            float y = vertices[i + 1];
+            float z = vertices[i + 2];
 
-        //     vertices[i] = (vertices[i] * size) + (1440.f / 2);
-        //     vertices[i + 1] = (vertices[i + 1] * size) + (900.f / 2);
+            z += 6.f;
+            x /= z;
+            y /= z;
 
-        //     // LINFO("%f %f %f\n", vertices[i], vertices[i + 1], vertices[i + 2]);
-        // }
+            x = (x * size) + (1440.f / 2);
+            y = 900 - ((y * size) + (900.f / 2));
 
-        // rohan_render(&entity->shader, 1440, vertices, (const int *)mesh.indices, mesh.index_count, ROHAN_TRIANGLE);
+            vertices[i] = x;
+            vertices[i + 1] = y;
+            vertices[i + 2] = z;
+        }
 
-        float z0 = 0.f, z1 = 1.f, z2 = 0.f, z3 = 1.f;
-        rohan_render_triangle_raw(&entity->shader, 1440, 0.f, 0.f, 1440.f, 0.f, 1440.f, 900.f, &z0, &z1, &z2);
-        rohan_render_triangle_raw(&entity->shader, 1440, 0.f, 0.f, 1440.f, 900.f, 0.f, 900.f, &z0, &z2, &z3);
+        rohan_render(&entity->shader, 1440, vertices, mesh.indices.data, mesh.indices.size, ROHAN_TRIANGLE);
+
+        sprintf(fps_buf, "frame: %zu", engine->frames_elapsed);
+        mt_render_text_2d_default(pixels, 1440, mt_string_refer_raw(fps_buf), 10, 10, 16, 16, 0xffffffff);
+        mt_render_text_2d_default(pixels, 1440, mt_string_refer_raw("this is also text"), 10, 30, 16, 16, 0xfff0f00f);
 
         mt_window_render(engine->window, pixels, 1440);
+        memset(pixels, 0, 1440 * 900 * sizeof *pixels);
 
+        for (size_t i = 0; i < 1440 * 900; ++i)
+        {
+            depth[i] = INFINITY;
+        }
+
+        engine->frames_elapsed += 1;
         engine->delta_time += 1.0 / fps;
     }
 

@@ -1,4 +1,4 @@
-#include "utility/mstring.h"
+#include "utility/mtstring.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -46,8 +46,8 @@ void mt_string_free(mt_string *str)
 {
     free(str->str);
 
-#if defined(MT_SANITIZE_FREE)
-    memset(str, 0, sizeof(*str));
+#ifdef MT_SANITIZE_FREE
+    memset(str, 0, sizeof *str);
 #endif
 }
 

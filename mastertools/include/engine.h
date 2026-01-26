@@ -3,7 +3,7 @@
 
 #include "scene/scene.h"
 #include "types.h"
-#include "utility/mstring.h"
+#include "utility/mtstring.h"
 
 struct mt_window;
 
@@ -12,6 +12,7 @@ struct mt_engine
 {
     mt_scene scene;
     struct mt_window *window;
+    size_t frames_elapsed;
     double delta_time;
     bool running;
 };

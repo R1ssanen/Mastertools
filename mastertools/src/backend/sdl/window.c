@@ -3,7 +3,7 @@
 #include <SDL3/SDL.h>
 
 #include "logging.h"
-#include "utility/mstring.h"
+#include "utility/mtstring.h"
 
 struct mt_window
 {
@@ -12,7 +12,7 @@ struct mt_window
     SDL_Texture *target;
 };
 
-mt_window *mt_window_create(char *title, int w, int h, int flags)
+mt_window *mt_window_create(char *title, int w, int h, enum mt_window_flag flags)
 {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_VIDEO))
     {
@@ -73,7 +73,7 @@ void mt_window_resize(mt_window *window, int w, int h)
 
 void mt_window_render(mt_window *window, int *pixels, int w)
 {
-    SDL_UpdateTexture(window->target, NULL, pixels, w * sizeof(*pixels));
+    SDL_UpdateTexture(window->target, NULL, pixels, w * sizeof *pixels);
     SDL_RenderTexture(window->renderer, window->target, NULL, NULL);
     SDL_RenderPresent(window->renderer);
 }

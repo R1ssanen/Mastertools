@@ -2,16 +2,18 @@
 
 #include <stdlib.h>
 
+#include "logging.h"
 #include "scene/entity.h"
+#include "types.h"
 #include "utility/array.h"
 #include "utility/file.h"
-#include "utility/mstring.h"
+#include "utility/mtstring.h"
 
-static inline bool matches(char c, const char *str)
+static inline bool char_within_str(char c, const char *str)
 {
-    for (size_t i = 0; i < strlen(str); ++i)
+    for (; *str != '\0'; ++str)
     {
-        if (str[i] == c)
+        if (c == *str)
         {
             return true;
         }
@@ -20,55 +22,19 @@ static inline bool matches(char c, const char *str)
     return false;
 }
 
-static char *trim_lead(char *str, const char *whitespace)
+static char *trim_leading(char *str, const char *whitespace)
 {
-    if (!str)
+    char *it = str;
+    for (; *it != '\0'; ++it)
     {
-        return NULL;
-    }
-
-    for (size_t i = 0; i < strlen(str); ++i)
-    {
-        if (!matches(str[i], whitespace))
+        if (!char_within_str(*it, whitespace))
         {
-            return str + i;
+            break;
         }
     }
 
-    return NULL;
+    return it;
 }
-
-static char *trim_tail(char *str, const char *whitespace)
-{
-    if (!str)
-    {
-        return NULL;
-    }
-
-    if (!matches(str[0], whitespace))
-    {
-        return str;
-    }
-
-    for (size_t i = strlen(str) - 1; i > 0; --i)
-    {
-        if (!matches(str[i], whitespace))
-        {
-            str[i + 1] = '\0';
-            return str;
-        }
-    }
-
-    return NULL;
-}
-
-inline static char *trim(char *str, const char *whitespace)
-{
-    str = trim_lead(str, whitespace);
-    return trim_tail(str, whitespace);
-}
-
-static const size_t END_TOK = (size_t)-1;
 
 typedef struct tokenizer tokenizer;
 struct tokenizer
@@ -76,87 +42,95 @@ struct tokenizer
     char *src;
     size_t offset;
     char delimiter;
+    bool ended;
 };
 
 static inline char *next(tokenizer *tokenizer)
 {
-    size_t start = tokenizer->offset;
-    if (start == END_TOK)
+    if (tokenizer->ended)
     {
         return NULL;
     }
 
+    size_t start = tokenizer->offset;
     for (size_t i = start; tokenizer->src[i] != '\0'; ++i)
     {
         if (tokenizer->src[i] == tokenizer->delimiter)
         {
             tokenizer->src[i] = '\0';
             tokenizer->offset = i + 1;
-            return tokenizer->src + start;
+            return trim_leading(tokenizer->src + start, " \t\v\f\r");
         }
     }
 
-    tokenizer->offset = END_TOK;
-    if (tokenizer->src[start] != '\0')
-    {
-        return tokenizer->src + start;
-    }
-    else
-    {
-        return NULL;
-    }
+    tokenizer->ended = true;
+    return trim_leading(tokenizer->src + start, " \t\v\f\r");
 }
 
-mt_entity *mt_load_wavefront_obj(mt_string_view path)
+struct mt_entity *mt_load_wavefront_obj(mt_string_view path)
 {
+    // char test_buf[] = "ab// ";
+    // tokenizer tok = {.src = test_buf, .offset = 0, .delimiter = '/'};
+
+    // char *res;
+    // puts(next(&tok));
+    // puts(next(&tok));
+    // puts(next(&tok));
+
+    // exit(0);
+
     char *buffer;
     size_t len;
-    if (!mt_file_read(path, (byte **)(&buffer), &len))
+    if (!mt_file_read(path, &buffer, &len))
     {
         return NULL;
     }
 
-    mt_array vertices = mt_array_create(sizeof(float));
-    mt_array indices = mt_array_create(sizeof(int));
+    mt_array_of(float) vertices = mt_array_create(sizeof(float));
+    mt_array_of(int) indices = mt_array_create(sizeof(int));
 
     tokenizer line_tok = {.src = buffer, .offset = 0, .delimiter = '\n'};
     char *line;
     while ((line = next(&line_tok)))
     {
-        line = trim_lead(line, " \t\v\f\r");
+        line = trim_leading(line, " \t\v\f\r");
+        // puts(line);
+        // continue;
 
         if ((line[0] == 'v') && (line[1] == ' '))
         {
-            tokenizer vertex_tok = {.src = trim_lead(line, " \t\v\f\rv"), .offset = 0, .delimiter = ' '};
+            tokenizer vertex_tok = {.src = trim_leading(line, " v\t\v\f\r"), .offset = 0, .delimiter = ' '};
             char *vertex;
             while ((vertex = next(&vertex_tok)))
             {
                 float coord = strtof(vertex, NULL);
                 mt_array_push(&vertices, &coord);
             }
-
-            // vertices[vertex_count++] = 1.f; // w
-            // vertices[vertex_count++] = 0.f; // u
-            // vertices[vertex_count++] = 0.f; // v
-            // vertices[vertex_count++] = 0.f; // nx
-            // vertices[vertex_count++] = 0.f; // ny
-            // vertices[vertex_count++] = 0.f; // nz
         }
 
         else if (line[0] == 'f')
         {
-            tokenizer vertex_tok = {.src = trim_lead(line, " \t\v\f\rf"), .offset = 0, .delimiter = ' '};
+            tokenizer vertex_tok = {.src = trim_leading(line, " f\t\v\f\r"), .offset = 0, .delimiter = ' '};
             char *vertex;
             while ((vertex = next(&vertex_tok)))
             {
-                tokenizer index_tok = {.src = trim_lead(vertex, " \t\v\f\r"), .offset = 0, .delimiter = '/'};
-                char *index;
-                // while ((index = next(&index_tok)))
-                // {
-                //     puts(index);
-                // }
-                int id = strtoul(next(&index_tok), NULL, 10);
+                tokenizer index_tok = {.src = trim_leading(vertex, " \t\v\f\r"), .offset = 0, .delimiter = '/'};
+
+                // for (char *it = vertex; *it != '\0'; ++it)
+                //     printf("(%c) %d ", *it, (int)*it);
+                // putchar('\n');
+
+                char *next_id = next(&index_tok);
+                // printf("%s ", next_id);
+
+                int id = strtoul(next_id, NULL, 10) - 1;
                 mt_array_push(&indices, &id);
+
+                next_id = next(&index_tok);
+                // printf("/ %s ", next_id);
+
+                next_id = next(&index_tok);
+                // printf("/ %s\n", next_id);
             }
         }
     }
@@ -166,14 +140,14 @@ mt_entity *mt_load_wavefront_obj(mt_string_view path)
     printf("vertex count: %zu\n", vertices.size / 3);
     printf("triangle count: %zu\n", indices.size / 3);
 
-    mt_entity *entity = malloc(sizeof(mt_entity));
-    entity->meshes = mt_array_create(sizeof(mt_mesh));
-
+    struct mt_entity *entity = malloc(sizeof *entity);
     mt_mesh mesh = {
         .vertices = vertices,
         .indices = indices,
         .attribute_count = 1,
     };
+
+    entity->meshes = mt_array_create(sizeof(mt_mesh));
     mt_array_push(&entity->meshes, &mesh);
 
     return entity;

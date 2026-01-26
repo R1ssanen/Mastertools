@@ -2,7 +2,7 @@
 #define MASTERTOOLS_LIBRARY_H_
 
 #include "types.h"
-#include "utility/mstring.h"
+#include "utility/mtstring.h"
 
 typedef struct mt_library mt_library;
 struct mt_library

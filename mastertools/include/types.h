@@ -3,8 +3,6 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-
-typedef unsigned char byte;
-typedef unsigned int uint;
+#include <stdint.h>
 
 #endif

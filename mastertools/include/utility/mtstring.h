@@ -18,7 +18,7 @@ typedef struct mt_string_view mt_string_view;
 struct mt_string_view
 {
     const char *str;
-    const size_t len;
+    size_t len;
 };
 
 mt_string mt_string_create(size_t len);

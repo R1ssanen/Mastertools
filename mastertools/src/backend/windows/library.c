@@ -1,9 +1,11 @@
 #include "system/library.h"
+
 #include "logging.h"
 #include "types.h"
-#include "utility/mstring.h"
+#include "utility/mtstring.h"
 
 #if defined(_WIN32) || defined(__CYGWIN__)
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 bool mt_library_load(mt_string_view path, mt_library *lib)
@@ -41,7 +43,7 @@ bool mt_library_free(mt_library *lib)
 
     mt_string_free(&lib->path);
 
-#if defined(MT_SANITIZE_FREE)
+#ifdef MT_SANITIZE_FREE
     memset(lib, 0, sizeof(*lib));
 #endif
 

@@ -5,10 +5,8 @@
 #include "cJSON.h"
 #include "loaders/wavefront_obj.h"
 #include "logging.h"
-#include "utility/file.h"
-
-//
 #include "system/library.h"
+#include "utility/file.h"
 
 void mt_entity_free(mt_entity *entity)
 {
@@ -70,9 +68,8 @@ mt_entity *parse_node_entity_json(const cJSON *object)
         LERROR("Failed to load shader library '%s'", shader_path.str);
     }
 
-    rohan_shader_instance_fn get_instance =
-        (rohan_shader_instance_fn)mt_library_load_symbol(&entity->shader_lib, mt_string_refer_raw("create_instance"));
-    entity->shader = get_instance();
+    void *get_instance = mt_library_load_symbol(&entity->shader_lib, mt_string_refer_raw("create_instance"));
+    entity->shader = ((rohan_shader_object (*)(void))(get_instance))();
 
     return entity;
 }

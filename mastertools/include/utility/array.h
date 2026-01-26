@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+#define mt_array_of(type_hint) mt_array
+
 typedef struct mt_array mt_array;
 struct mt_array
 {
@@ -23,11 +25,14 @@ void mt_array_free(mt_array *array);
 
 void mt_array_resize(mt_array *array, size_t new_capacity);
 
-void mt_array_push(mt_array *restrict array, const void *restrict value);
+// returns pointer to pushed element, if value == NULL reserves space only
+void *mt_array_push(mt_array *array, const void *value);
 
-void mt_array_pop(mt_array *restrict array);
+void mt_array_pop(mt_array *array);
 
-#define mt_array_get(array, type, index) ((type *)((array)->data))[index]
+#define mt_array_ptr(array, type, index) (((type *)((array)->data)) + index)
+
+#define mt_array_get(array, type, index) *mt_array_ptr(array, type, index)
 
 #define mt_array_foreach(array, type, iterator)                                                                        \
     for (type *iterator = (type *)((array)->data); iterator < (type *)((array)->data) + (array)->size; ++iterator)

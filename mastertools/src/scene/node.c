@@ -3,18 +3,6 @@
 #include "logging.h"
 #include "scene/entity.h"
 
-mt_node *mt_node_create(void)
-{
-    mt_node *node = malloc(sizeof(mt_node));
-    if (!node)
-    {
-        LFATAL("Memory allocation for scene node failed");
-    }
-
-    node->children = mt_array_create(sizeof(mt_node *));
-    return node;
-}
-
 void mt_node_free(mt_node *node)
 {
     switch (node->kind)
@@ -27,11 +15,9 @@ void mt_node_free(mt_node *node)
         break;
     }
 
-    mt_array_foreach(&node->children, mt_node *, child)
-    {
-        mt_node_free(*child);
-    }
-
     mt_array_free(&node->children);
-    free(node);
+
+#ifdef MT_SANITIZE_FREE
+    memset(node, 0, sizeof *node);
+#endif
 }
