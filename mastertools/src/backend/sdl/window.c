@@ -36,6 +36,8 @@ mt_window *mt_window_create(char *title, int w, int h, enum mt_window_flag flags
         return NULL;
     }
 
+    SDL_SetWindowRelativeMouseMode(window->window, true);
+
     window->renderer = SDL_CreateRenderer(window->window, NULL);
     if (!window->renderer)
     {
@@ -43,7 +45,8 @@ mt_window *mt_window_create(char *title, int w, int h, enum mt_window_flag flags
         return NULL;
     }
 
-    window->target = SDL_CreateTexture(window->renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
+    window->target =
+        SDL_CreateTexture(window->renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, 1440, 900);
     if (!window->target)
     {
         LERROR("Could not create SDL3 texture: %s", SDL_GetError());

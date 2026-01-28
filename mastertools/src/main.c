@@ -1,3 +1,6 @@
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "engine.h"
 #include "logging.h"
@@ -5,9 +8,6 @@
 #include "scene/node.h"
 #include "utility/file.h"
 #include "utility/mtstring.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 #include "rohan.h"
 #include "utility/array.h"
