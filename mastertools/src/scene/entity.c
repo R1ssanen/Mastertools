@@ -18,7 +18,7 @@ void mt_entity_free(mt_entity *entity)
 
     mt_array_free(&entity->meshes);
 
-    entity->spec->destroy(entity->spec);
+    entity->desc->destroy(entity->desc);
     _mm_free(entity->shader_instance);
 
     mt_library_free(&entity->shader_lib);
@@ -70,9 +70,9 @@ mt_entity *parse_node_entity_json(const cJSON *object)
         LERROR("Failed to load shader library '%s'", shader_path.str);
     }
 
-    void *get_spec = mt_library_load_symbol(&entity->shader_lib, mt_string_refer_raw("get_specification"));
-    entity->spec = ((rohan_get_specification_fn)get_spec)();
-    entity->shader_instance = _mm_malloc(entity->spec->instance_size, 32);
+    void *get_spec = mt_library_load_symbol(&entity->shader_lib, mt_string_refer_raw("get_description"));
+    entity->desc = ((rohan_get_description_fn)get_spec)();
+    entity->shader_instance = _mm_malloc(entity->desc->instance_size, 32);
 
     return entity;
 }

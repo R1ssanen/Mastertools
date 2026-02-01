@@ -12,7 +12,7 @@ struct cJSON;
 typedef struct mt_entity mt_entity;
 struct mt_entity
 {
-    rohan_shader_spec *spec;
+    rohan_shader_desc *desc;
     mt_array_of(mt_mesh) meshes;
     mt_library shader_lib;
     void *shader_instance;

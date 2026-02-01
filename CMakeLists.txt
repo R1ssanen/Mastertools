@@ -16,8 +16,10 @@ add_executable(mastertools
     "mastertools/src/scene/entity.c"
     "mastertools/src/scene/mesh.c"
     "mastertools/src/scene/node.c"
+    "mastertools/src/scene/camera.c"
 
     "mastertools/src/backend/windows/library.c"
+    "mastertools/src/backend/windows/time.c"
     "mastertools/src/backend/sdl/window.c"
 
     "vendor/cJSON.c"
@@ -30,13 +32,13 @@ target_compile_definitions(mastertools PRIVATE MT_ANSI_COLORS MT_SANITIZE_FREE)
 set_target_properties (mastertools PROPERTIES
 	C_STANDARD 99
 	C_STANDARD_REQUIRED TRUE
-	C_EXTENSIONS FALSE
+	C_EXTENSIONS TRUE
 )
 
 target_compile_options(mastertools PRIVATE
-    -Wall -Wextra -Wpedantic -march=native -mavx2 -mfma
+    -Wall -Wextra -march=native -mavx2 -mfma
     $<$<CONFIG:Debug>: -g -O0 -fno-inline -fno-omit-frame-pointer>
-    $<$<CONFIG:Release>: -O3>
+    $<$<CONFIG:Release>: -Ofast>
 )
 
 find_package(SDL3 REQUIRED)

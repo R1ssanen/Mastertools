@@ -8,7 +8,7 @@
 
 static inline void string_resize_no_init(mt_string *str, size_t new_len)
 {
-    char *new_str = realloc(str, new_len + 1);
+    char *new_str = realloc(str->str, new_len + 1);
     if (!new_str)
     {
         LFATAL("Memory reallocation for string failed");

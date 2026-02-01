@@ -6,6 +6,8 @@
 #include "utility/array.h"
 #include "utility/mtstring.h"
 
+struct mt_camera;
+
 typedef struct mt_scene mt_scene;
 struct mt_scene
 {
@@ -13,6 +15,7 @@ struct mt_scene
     mt_node root;
     mt_string name;
     mt_string path;
+    struct mt_camera *active_camera;
 };
 
 bool mt_scene_load(mt_string_view path, mt_scene *scene);

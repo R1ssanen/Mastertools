@@ -39,5 +39,5 @@ int main(int argc, char *argv[])
     }
 
     mt_engine_free(&engine);
-    return status;
+    return 0;
 }

@@ -137,8 +137,8 @@ struct mt_entity *mt_load_wavefront_obj(mt_string_view path)
 
     free(buffer);
 
-    printf("vertex count: %zu\n", vertices.size / 3);
-    printf("triangle count: %zu\n", indices.size / 3);
+    // printf("vertex count: %zu\n", vertices.size / 3);
+    // printf("triangle count: %zu\n", indices.size / 3);
 
     struct mt_entity *entity = malloc(sizeof *entity);
     mt_mesh mesh = {

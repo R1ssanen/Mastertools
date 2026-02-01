@@ -29,7 +29,7 @@ mt_window *mt_window_create(char *title, int w, int h, enum mt_window_flag flags
     int sdl_flags = (flags & MT_WINDOW_RESIZABLE) ? SDL_WINDOW_RESIZABLE : 0;
     sdl_flags |= (flags & MT_WINDOW_FULLSCREEN) ? SDL_WINDOW_FULLSCREEN : 0;
 
-    window->window = SDL_CreateWindow(title, w, h, sdl_flags);
+    window->window = SDL_CreateWindow(title, 1920, 1080, sdl_flags);
     if (!window->window)
     {
         LERROR("Could not create SDL3 window: %s", SDL_GetError());
@@ -45,8 +45,7 @@ mt_window *mt_window_create(char *title, int w, int h, enum mt_window_flag flags
         return NULL;
     }
 
-    window->target =
-        SDL_CreateTexture(window->renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, 1440, 900);
+    window->target = SDL_CreateTexture(window->renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
     if (!window->target)
     {
         LERROR("Could not create SDL3 texture: %s", SDL_GetError());
@@ -76,7 +75,7 @@ void mt_window_resize(mt_window *window, int w, int h)
 
 void mt_window_render(mt_window *window, int *pixels, int w)
 {
-    SDL_UpdateTexture(window->target, NULL, pixels, w * sizeof *pixels);
+    SDL_UpdateTexture(window->target, NULL, pixels, w * sizeof(int));
     SDL_RenderTexture(window->renderer, window->target, NULL, NULL);
     SDL_RenderPresent(window->renderer);
 }

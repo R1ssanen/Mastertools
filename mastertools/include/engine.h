@@ -6,12 +6,14 @@
 #include "utility/mtstring.h"
 
 struct mt_window;
+struct mt_timer;
 
 typedef struct mt_engine mt_engine;
 struct mt_engine
 {
     mt_scene scene;
     struct mt_window *window;
+    struct mt_timer *timer;
     size_t frames_elapsed;
     double delta_time;
     bool running;

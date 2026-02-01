@@ -1,12 +1,13 @@
+#if defined(_WIN32) || defined(__CYGWIN__)
+
 #include "system/library.h"
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #include "logging.h"
 #include "types.h"
 #include "utility/mtstring.h"
-
-#if defined(_WIN32) || defined(__CYGWIN__)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 
 bool mt_library_load(mt_string_view path, mt_library *lib)
 {

@@ -8,8 +8,8 @@
       "binaryDir": "${sourceDir}/bin/${presetName}",
       "installDir": "${sourceDir}/bin/${presetName}",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true
       }
     },

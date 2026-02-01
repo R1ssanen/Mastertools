@@ -32,7 +32,7 @@ void mt_array_pop(mt_array *array);
 
 #define mt_array_ptr(array, type, index) (((type *)((array)->data)) + index)
 
-#define mt_array_get(array, type, index) *mt_array_ptr(array, type, index)
+#define mt_array_get(array, type, index) (*mt_array_ptr(array, type, index))
 
 #define mt_array_foreach(array, type, iterator)                                                                        \
     for (type *iterator = (type *)((array)->data); iterator < (type *)((array)->data) + (array)->size; ++iterator)

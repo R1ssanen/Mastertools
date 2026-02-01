@@ -7,6 +7,7 @@
 
 #include "cJSON.h"
 #include "logging.h"
+#include "scene/camera.h"
 #include "scene/entity.h"
 #include "scene/node.h"
 #include "utility/file.h"
@@ -33,8 +34,7 @@ static bool parse_scene_json(cJSON *object, mt_scene *scene, mt_node *parent)
     else if (strcmp(type->valuestring, "camera") == 0)
     {
         node->kind = MT_NODE_CAMERA;
-        LERROR("Not implemented");
-        exit(1);
+        node->data = parse_node_camera_json(object, scene);
     }
     else
     {
@@ -42,17 +42,16 @@ static bool parse_scene_json(cJSON *object, mt_scene *scene, mt_node *parent)
         return false;
     }
 
-    cJSON *children = cJSON_GetObjectItemCaseSensitive(object, "children");
-    if (!children)
+    cJSON *children = cJSON_GetObjectItemCaseSensitive(object, "nodes");
+    if (children)
     {
-        return true;
-    }
-
-    for (cJSON *child = children->child; child != NULL; child = child->next)
-    {
-        if (!parse_scene_json(child, scene, node))
+        for (cJSON *child = children->child; child != NULL; child = child->next)
         {
-            return false;
+            if (!parse_scene_json(child, scene, node))
+            {
+                LERROR("Could not parse scene");
+                return false;
+            }
         }
     }
 
@@ -77,9 +76,10 @@ bool mt_scene_load(mt_string_view path, mt_scene *scene)
     }
 
     cJSON *json = cJSON_ParseWithLength((const char *)buffer, count);
-    scene->nodes = mt_array_create(sizeof(mt_node));
+    scene->nodes = mt_array_create_reserved(sizeof(mt_node), 5);
     scene->root.children = mt_array_create(sizeof(uint32_t));
     scene->root.kind = MT_NODE_ROOT;
+    scene->active_camera = NULL;
 
     for (cJSON *child = json->child; child != NULL; child = child->next)
     {
@@ -90,6 +90,11 @@ bool mt_scene_load(mt_string_view path, mt_scene *scene)
             mt_scene_free(scene);
             return false;
         }
+    }
+
+    if (!scene->active_camera)
+    {
+        LWARN("No active camera set for scene '%s'", path.str);
     }
 
     cJSON_Delete(json);
