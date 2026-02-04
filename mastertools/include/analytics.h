@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "system/time.h"
+#include "texture.h"
 #include "types.h"
 
 #ifndef MT_FRAMETIME_SAMPLES
@@ -62,8 +63,10 @@ double mt_analytics_get_average_frametime(mt_frame_analytics *analytics)
     return analytics->average;
 }
 
-void render_line(int *pixels, int width, int x0, int y0, int x1, int y1, int color)
+void render_line(mt_texture *pixels, int x0, int y0, int x1, int y1, int color)
 {
+    uint *data = (uint *)pixels->data;
+
     int dx = abs(x1 - x0);
     int sx = x0 < x1 ? 1 : -1;
     int dy = -abs(y1 - y0);
@@ -72,7 +75,7 @@ void render_line(int *pixels, int width, int x0, int y0, int x1, int y1, int col
 
     for (;;)
     {
-        pixels[y0 * width + x0] = color;
+        data[y0 * pixels->width + x0] = color;
 
         int e2 = 2 * error;
         if (e2 >= dy)
@@ -102,14 +105,12 @@ void render_line(int *pixels, int width, int x0, int y0, int x1, int y1, int col
     }
 }
 
-#include "math/common.h"
-
-static inline void mt_analytics_render_frame_graph(mt_frame_analytics *analytics, int *pixels, int width, int x, int y,
+static inline void mt_analytics_render_frame_graph(mt_frame_analytics *analytics, mt_texture *pixels, int x, int y,
                                                    int w, int h)
 {
-    float inv_analytics_range = 1.f / (analytics->max - analytics->min);
-    int y_a = y + h * MT_MAX(1.f - (analytics->average - analytics->min) * inv_analytics_range, 0.f);
-    render_line(pixels, width, x, y_a, x + w, y_a, 0xff777777);
+    float height_over_range = h / (analytics->max - analytics->min);
+    int y_a = (y + h) - (analytics->average - analytics->min) * height_over_range;
+    render_line(pixels, x, y_a, x + w, y_a, 0xff666666);
 
     float x_step = w / (float)(MT_FRAMETIME_SAMPLES - 1);
 
@@ -117,10 +118,10 @@ static inline void mt_analytics_render_frame_graph(mt_frame_analytics *analytics
     {
         int x0 = x + i * x_step;
         int x1 = x + (i + 1) * x_step;
-        int y0 = y + h * MT_MAX(1.f - (analytics->samples[i] - analytics->min) * inv_analytics_range, 0.f);
-        int y1 = y + h * MT_MAX(1.f - (analytics->samples[i + 1] - analytics->min) * inv_analytics_range, 0.f);
+        int y0 = (y + h) - (analytics->samples[i] - analytics->min) * height_over_range;
+        int y1 = (y + h) - (analytics->samples[i + 1] - analytics->min) * height_over_range;
 
-        render_line(pixels, width, x0, y0, x1, y1, 0xff00ff00);
+        render_line(pixels, x0, y0, x1, y1, 0xffcccccc);
     }
 }
 

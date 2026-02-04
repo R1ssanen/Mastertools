@@ -3,6 +3,8 @@
 
 #include "utility/mtstring.h"
 
-void mt_render_text_2d_default(int *pixels, int width, mt_string_view text, int x, int y, int w, int h, int color);
+struct mt_texture;
+
+void mt_render_text_2d_default(struct mt_texture *pixels, mt_string_view text, int x, int y, int w, int h, int color);
 
 #endif

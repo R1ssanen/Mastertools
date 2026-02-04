@@ -43,7 +43,6 @@
     {                                                                                                                  \
         fprintf(stderr, MT_TEXT_PURPLE_BOLD("[ FATAL ]") " " __VA_ARGS__);                                             \
         fprintf(stderr, " (%s:%d)\n", __func__, __LINE__);                                                             \
-        abort();                                                                                                       \
     } while (0)
 
 #ifndef NDEBUG

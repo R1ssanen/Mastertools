@@ -7,15 +7,20 @@
 #include "types.h"
 #include "utility/array.h"
 
+//
+#include "texture.h"
+
 struct cJSON;
 
 typedef struct mt_entity mt_entity;
 struct mt_entity
 {
-    rohan_shader_desc *desc;
     mt_array_of(mt_mesh) meshes;
     mt_library shader_lib;
+    rohan_shader_desc *desc;
+    mt_texture *texture;
     void *shader_instance;
+    int depth_layer;
 };
 
 void mt_entity_free(mt_entity *entity);

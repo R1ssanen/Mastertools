@@ -4,6 +4,8 @@
 #include "types.h"
 #include "utility/mtstring.h"
 
+struct mt_texture;
+
 typedef struct mt_window mt_window;
 
 enum mt_window_flag
@@ -19,6 +21,6 @@ void mt_window_free(mt_window *window);
 
 void mt_window_resize(mt_window *window, int w, int h);
 
-void mt_window_render(mt_window *window, int *pixels, int w);
+void mt_window_render(mt_window *window, struct mt_texture *pixels);
 
 #endif

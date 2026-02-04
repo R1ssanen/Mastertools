@@ -15,6 +15,6 @@ bool mt_library_load(mt_string_view path, mt_library *lib);
 
 void *mt_library_load_symbol(const mt_library *lib, mt_string_view name);
 
-bool mt_library_free(mt_library *lib);
+void mt_library_free(mt_library *lib);
 
 #endif

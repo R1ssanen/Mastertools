@@ -8,18 +8,25 @@
 #include "logging.h"
 #include "types.h"
 #include "utility/mtstring.h"
+#include "utility/zero_init.h"
 
 bool mt_library_load(mt_string_view path, mt_library *lib)
 {
+    MT_ZERO_INIT(lib);
+
     lib->handle = (void *)LoadLibraryA((LPCSTR)path.str);
     if (!lib->handle)
     {
         LERROR("Could not open dynamic library file '%s'", path.str);
-        return false;
+        goto fail;
     }
 
     lib->path = mt_string_copy_view(path);
     return true;
+
+fail:
+    mt_library_free(lib);
+    return false;
 }
 
 void *mt_library_load_symbol(const mt_library *lib, mt_string_view name)
@@ -34,21 +41,21 @@ void *mt_library_load_symbol(const mt_library *lib, mt_string_view name)
     return (void *)symbol;
 }
 
-bool mt_library_free(mt_library *lib)
+void mt_library_free(mt_library *lib)
 {
-    if (FreeLibrary((HMODULE)lib->handle) == 0)
+    if (!lib)
     {
-        LERROR("Could not free dynamic library '%s'", lib->path.str);
-        return false;
+        return;
+    }
+
+    if (lib->handle)
+    {
+        FreeLibrary((HMODULE)lib->handle);
     }
 
     mt_string_free(&lib->path);
 
-#ifdef MT_SANITIZE_FREE
-    memset(lib, 0, sizeof(*lib));
-#endif
-
-    return true;
+    MT_ZERO_INIT(lib);
 }
 
 #endif

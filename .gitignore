@@ -36,3 +36,4 @@ bin/
 scenes
 resource
 test_shader*
+CMakePresets.json

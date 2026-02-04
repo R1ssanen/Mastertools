@@ -5,7 +5,7 @@
 #include "types.h"
 #include "utility/array.h"
 
-struct mt_scene;
+struct mt_map;
 
 enum mt_node_kind
 {
@@ -19,16 +19,17 @@ enum mt_node_kind
 typedef struct mt_node mt_node;
 struct mt_node
 {
-    mt_array_of(uint32_t) children;
+    mt_array_of(uint) children;
     mmat4 transform;
     void *data;
-    uint32_t parent;
+    uint parent_id;
+    uint self_id;
     enum mt_node_kind kind;
-    bool dirty;
+    bool view_parented;
 };
 
-void mt_node_propagate_transform(mt_node *node, struct mt_scene *scene, mmat4 prop);
-
 void mt_node_free(mt_node *node);
+
+void mt_node_propagate_transform(mt_node *node, struct mt_map *map, mmat4 prop, double delta_time);
 
 #endif

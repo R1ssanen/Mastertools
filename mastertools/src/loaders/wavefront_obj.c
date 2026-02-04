@@ -1,12 +1,14 @@
 #include "loaders/wavefront_obj.h"
 
+#include <math.h>
 #include <stdlib.h>
 
 #include "logging.h"
-#include "scene/entity.h"
+#include "map/entity.h"
 #include "types.h"
 #include "utility/array.h"
 #include "utility/file.h"
+#include "utility/hash.h"
 #include "utility/mtstring.h"
 
 static inline bool char_within_str(char c, const char *str)
@@ -45,6 +47,15 @@ struct tokenizer
     bool ended;
 };
 
+static inline uint make_id(size_t base_hash, uint face)
+{
+    size_t v = base_hash ^ (size_t)face * 0x9e3779b97f4a7c15ULL;
+    v ^= v >> 33;
+    v *= 0xff51afd7ed558ccdULL;
+    v ^= v >> 33;
+    return (uint)v;
+}
+
 static inline char *next(tokenizer *tokenizer)
 {
     if (tokenizer->ended)
@@ -67,88 +78,97 @@ static inline char *next(tokenizer *tokenizer)
     return trim_leading(tokenizer->src + start, " \t\v\f\r");
 }
 
-struct mt_entity *mt_load_wavefront_obj(mt_string_view path)
+bool mt_load_wavefront_obj(mt_string_view path, mt_entity *entity)
 {
-    // char test_buf[] = "ab// ";
-    // tokenizer tok = {.src = test_buf, .offset = 0, .delimiter = '/'};
-
-    // char *res;
-    // puts(next(&tok));
-    // puts(next(&tok));
-    // puts(next(&tok));
-
-    // exit(0);
-
     char *buffer;
     size_t len;
     if (!mt_file_read(path, &buffer, &len))
     {
+        LERROR("Could not open .obj file '%s'", path.str);
         return NULL;
     }
 
-    mt_array_of(float) vertices = mt_array_create(sizeof(float));
-    mt_array_of(int) indices = mt_array_create(sizeof(int));
+    size_t base_hash = mt_hash_fnv_1a_64(path);
 
+    mt_array_of(float) vertices = mt_array_create(sizeof(float));
+    mt_array_of(float) uvs = mt_array_create(sizeof(float));
+    mt_array_of(float) normals = mt_array_create(sizeof(float));
+    mt_array_of(uint) indices = mt_array_create(sizeof(uint));
+
+    uint counter = 1;
     tokenizer line_tok = {.src = buffer, .offset = 0, .delimiter = '\n'};
     char *line;
     while ((line = next(&line_tok)))
     {
         line = trim_leading(line, " \t\v\f\r");
-        // puts(line);
-        // continue;
 
         if ((line[0] == 'v') && (line[1] == ' '))
         {
             tokenizer vertex_tok = {.src = trim_leading(line, " v\t\v\f\r"), .offset = 0, .delimiter = ' '};
-            char *vertex;
-            while ((vertex = next(&vertex_tok)))
-            {
-                float coord = strtof(vertex, NULL);
-                mt_array_push(&vertices, &coord);
-            }
+
+            char *vertex = next(&vertex_tok);
+            float x = strtof(vertex, NULL);
+            mt_array_push(&vertices, &x);
+
+            vertex = next(&vertex_tok);
+            float y = strtof(vertex, NULL);
+            mt_array_push(&vertices, &y);
+
+            vertex = next(&vertex_tok);
+            float z = strtof(vertex, NULL);
+            mt_array_push(&vertices, &z);
+        }
+
+        else if ((line[0] == 'v') && (line[1] == 't'))
+        {
+            tokenizer uv_tok = {.src = trim_leading(line, " vt\t\v\f\r"), .offset = 0, .delimiter = ' '};
+
+            char *uv = next(&uv_tok);
+            float u = fabs(strtof(uv, NULL));
+            u = ((int)u > 1) ? u - truncf(u) : u;
+            mt_array_push(&uvs, &u);
+
+            uv = next(&uv_tok);
+            float v = fabs(strtof(uv, NULL));
+            v = ((int)v > 1) ? v - truncf(v) : v;
+            mt_array_push(&uvs, &v);
         }
 
         else if (line[0] == 'f')
         {
+            uint id = make_id(base_hash, counter++);
+            mt_array_push(&indices, &id);
+
             tokenizer vertex_tok = {.src = trim_leading(line, " f\t\v\f\r"), .offset = 0, .delimiter = ' '};
             char *vertex;
             while ((vertex = next(&vertex_tok)))
             {
                 tokenizer index_tok = {.src = trim_leading(vertex, " \t\v\f\r"), .offset = 0, .delimiter = '/'};
 
-                // for (char *it = vertex; *it != '\0'; ++it)
-                //     printf("(%c) %d ", *it, (int)*it);
-                // putchar('\n');
+                char *id = next(&index_tok);
+                int vertex_id = strtoul(id, NULL, 10) - 1;
+                mt_array_push(&indices, &vertex_id);
 
-                char *next_id = next(&index_tok);
-                // printf("%s ", next_id);
+                id = next(&index_tok);
+                int uv_id = strtoul(id, NULL, 10) - 1;
+                mt_array_push(&indices, &uv_id);
+                // int zero = 0;
+                // mt_array_push(&indices, &zero);
 
-                int id = strtoul(next_id, NULL, 10) - 1;
-                mt_array_push(&indices, &id);
-
-                next_id = next(&index_tok);
-                // printf("/ %s ", next_id);
-
-                next_id = next(&index_tok);
-                // printf("/ %s\n", next_id);
+                // next_id = next(&index_tok);
+                //    printf("/ %s\n", next_id);
             }
         }
     }
 
-    free(buffer);
-
-    // printf("vertex count: %zu\n", vertices.size / 3);
-    // printf("triangle count: %zu\n", indices.size / 3);
-
-    struct mt_entity *entity = malloc(sizeof *entity);
-    mt_mesh mesh = {
-        .vertices = vertices,
-        .indices = indices,
-        .attribute_count = 1,
-    };
-
     entity->meshes = mt_array_create(sizeof(mt_mesh));
-    mt_array_push(&entity->meshes, &mesh);
 
-    return entity;
+    mt_mesh *mesh = mt_array_push(&entity->meshes, NULL);
+    mesh->vertices = vertices;
+    mesh->uvs = uvs;
+    mesh->indices = indices;
+    mesh->normals = normals;
+
+    free(buffer);
+    return true;
 }

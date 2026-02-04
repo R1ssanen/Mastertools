@@ -8,18 +8,18 @@
 
 struct mt_camera;
 
-typedef struct mt_scene mt_scene;
-struct mt_scene
+typedef struct mt_map mt_map;
+struct mt_map
 {
     mt_array_of(mt_node) nodes;
-    mt_node root;
+    mt_array_of(mt_camera) cameras;
     mt_string name;
     mt_string path;
-    struct mt_camera *active_camera;
+    int active_camera_id;
 };
 
-bool mt_scene_load(mt_string_view path, mt_scene *scene);
+bool mt_map_load(mt_string_view path, mt_map *map);
 
-void mt_scene_free(mt_scene *scene);
+void mt_map_free(mt_map *map);
 
 #endif

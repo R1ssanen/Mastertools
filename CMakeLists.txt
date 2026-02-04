@@ -5,6 +5,7 @@ add_executable(mastertools
 	"mastertools/src/main.c"
     "mastertools/src/engine.c"
     "mastertools/src/text.c"
+    "mastertools/src/texture.c"
 
     "mastertools/src/utility/mtstring.c"
     "mastertools/src/utility/file.c"
@@ -12,11 +13,11 @@ add_executable(mastertools
 
     "mastertools/src/loaders/wavefront_obj.c"
 
-    "mastertools/src/scene/scene.c"
-    "mastertools/src/scene/entity.c"
-    "mastertools/src/scene/mesh.c"
-    "mastertools/src/scene/node.c"
-    "mastertools/src/scene/camera.c"
+    "mastertools/src/map/map.c"
+    "mastertools/src/map/entity.c"
+    "mastertools/src/map/mesh.c"
+    "mastertools/src/map/node.c"
+    "mastertools/src/map/camera.c"
 
     "mastertools/src/backend/windows/library.c"
     "mastertools/src/backend/windows/time.c"
@@ -27,8 +28,6 @@ add_executable(mastertools
 
 target_include_directories(mastertools PRIVATE "mastertools/include" "vendor")
 
-target_compile_definitions(mastertools PRIVATE MT_ANSI_COLORS MT_SANITIZE_FREE)
-
 set_target_properties (mastertools PROPERTIES
 	C_STANDARD 99
 	C_STANDARD_REQUIRED TRUE
@@ -38,7 +37,7 @@ set_target_properties (mastertools PROPERTIES
 target_compile_options(mastertools PRIVATE
     -Wall -Wextra -march=native -mavx2 -mfma
     $<$<CONFIG:Debug>: -g -O0 -fno-inline -fno-omit-frame-pointer>
-    $<$<CONFIG:Release>: -Ofast>
+    $<$<CONFIG:Release>: -O3>
 )
 
 find_package(SDL3 REQUIRED)

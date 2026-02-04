@@ -6,6 +6,7 @@
 #include <windows.h>
 
 #include "logging.h"
+#include "mtassert.h"
 
 struct mt_timer
 {
@@ -17,31 +18,33 @@ struct mt_timer
 mt_timer *mt_timer_create(void)
 {
     mt_timer *timer = malloc(sizeof *timer);
-    if (!timer)
-    {
-        LFATAL("Could not allocate memory for timer");
-    }
+    MT_ASSERT(timer != NULL, "Could not allocate memory for timer");
 
     if (QueryPerformanceFrequency(&timer->freq) == 0)
     {
         LERROR("System does not support high-resolution performance counter");
-        free(timer);
-        return NULL;
+        goto fail;
     }
 
     if (QueryPerformanceCounter(&timer->start) == 0)
     {
         LERROR("System does not support high-resolution performance counter");
-        free(timer);
-        return NULL;
+        goto fail;
     }
 
     return timer;
+
+fail:
+    mt_timer_free(timer);
+    return NULL;
 }
 
 void mt_timer_free(mt_timer *timer)
 {
-    free(timer);
+    if (timer)
+    {
+        free(timer);
+    }
 }
 
 double mt_timer_get_elapsed_since_created(const mt_timer *timer)

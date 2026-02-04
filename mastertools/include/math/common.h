@@ -13,7 +13,7 @@
 
 #define MT_CLAMP(x, min, max) ((x) < (min) ? (min) : (x) > (max) ? (max) : (x))
 
-static inline mmat4 mt_transform(mvec3 p)
+static inline mmat4 mt_translate(mvec3 p)
 {
     mmat4 trans = mt_mat4_identity();
     trans.m03 = p.x;
@@ -54,6 +54,19 @@ static inline mmat4 mt_view(mvec3 eye, mvec3 forward)
         .m0 = mt_vec3_to_vec4(right, -mt_vec3_dot(right, eye)),
         .m1 = mt_vec3_to_vec4(up, -mt_vec3_dot(up, eye)),
         .m2 = mt_vec3_to_vec4(mt_vec3_negate(forward), mt_vec3_dot(forward, eye)),
+        .m3 = mt_vec4(0.f, 0.f, 0.f, 1.f),
+    };
+}
+
+static inline mmat4 mt_unview(mvec3 eye, mvec3 forward)
+{
+    mvec3 right = mt_vec3_normalize(mt_vec3_cross(forward, mt_vec3(0.f, 1.f, 0.f)));
+    mvec3 up = mt_vec3_normalize(mt_vec3_cross(right, forward));
+
+    return (mmat4){
+        .m0 = mt_vec4(right.x, up.x, -forward.x, eye.x),
+        .m1 = mt_vec4(right.y, up.y, -forward.y, eye.y),
+        .m2 = mt_vec4(right.z, up.z, -forward.z, eye.z),
         .m3 = mt_vec4(0.f, 0.f, 0.f, 1.f),
     };
 }

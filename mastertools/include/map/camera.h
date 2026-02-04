@@ -6,21 +6,20 @@
 #include "types.h"
 
 struct cJSON;
-struct mt_scene;
+struct mt_map;
 
 typedef struct mt_camera mt_camera;
 struct mt_camera
 {
     mvec3 pos;
     mvec3 angle;
-    mvec2 range;
+    float near;
+    float far;
     float r_fov;
     bool active;
 };
 
-void mt_camera_free(mt_camera *camera);
-
-mt_camera *parse_node_camera_json(struct cJSON *object, struct mt_scene *scene);
+mt_camera *parse_node_camera_json(struct cJSON *object, struct mt_map *map);
 
 mvec3 mt_camera_get_forward(mt_camera *camera);
 

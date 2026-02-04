@@ -1,4 +1,4 @@
-#include "scene/entity.h"
+#include "map/entity.h"
 
 #include <immintrin.h>
 #include <string.h>
@@ -7,10 +7,17 @@
 #include "loaders/wavefront_obj.h"
 #include "logging.h"
 #include "system/library.h"
+#include "texture.h"
+#include "types.h"
 #include "utility/file.h"
 
 void mt_entity_free(mt_entity *entity)
 {
+    if (!entity)
+    {
+        return;
+    }
+
     mt_array_foreach(&entity->meshes, mt_mesh, mesh)
     {
         mt_mesh_free(mesh);
@@ -18,11 +25,13 @@ void mt_entity_free(mt_entity *entity)
 
     mt_array_free(&entity->meshes);
 
-    entity->desc->destroy(entity->desc);
+    // NOTE: remember to fix
+    // entity->desc->destroy(entity->desc);
+
     _mm_free(entity->shader_instance);
 
     mt_library_free(&entity->shader_lib);
-    free(entity);
+    _mm_free(entity);
 }
 
 mt_entity *parse_node_entity_json(const cJSON *object)
@@ -55,7 +64,11 @@ mt_entity *parse_node_entity_json(const cJSON *object)
         return NULL;
     }
 
-    mt_entity *entity = mt_load_wavefront_obj(path);
+    mt_entity *entity = _mm_malloc(sizeof(mt_entity), 32);
+    if (!mt_load_wavefront_obj(path, entity))
+    {
+        return NULL;
+    }
 
     cJSON *shader = cJSON_GetObjectItemCaseSensitive(object, "shader");
     if (!shader)
@@ -73,6 +86,39 @@ mt_entity *parse_node_entity_json(const cJSON *object)
     void *get_spec = mt_library_load_symbol(&entity->shader_lib, mt_string_refer_raw("get_description"));
     entity->desc = ((rohan_get_description_fn)get_spec)();
     entity->shader_instance = _mm_malloc(entity->desc->instance_size, 32);
+
+    cJSON *layer = cJSON_GetObjectItemCaseSensitive(object, "layer");
+    if (layer && cJSON_IsNumber(layer))
+    {
+        if (layer->valueint > 3)
+        {
+            LWARN("Entity layer exceeds maximum value of 3");
+            entity->depth_layer = 3;
+        }
+        else
+        {
+            entity->depth_layer = layer->valueint;
+        }
+    }
+    else
+    {
+        entity->depth_layer = 0;
+    }
+
+    cJSON *texture = cJSON_GetObjectItemCaseSensitive(object, "texture");
+    if (!texture)
+    {
+        entity->texture = mt_texture_create(2, 2, MT_TEXTURE_RGBA8888);
+        uint *data = (uint *)entity->texture->data;
+        data[0] = 0xffffffff;
+        data[1] = 0xff00ffff;
+        data[2] = 0xff00ffff;
+        data[3] = 0xffffffff;
+    }
+    else
+    {
+        entity->texture = mt_texture_load(mt_string_refer_raw(texture->valuestring));
+    }
 
     return entity;
 }

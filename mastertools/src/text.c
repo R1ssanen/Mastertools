@@ -1,6 +1,7 @@
 #include "system/text.h"
 
 #include "rohan.h"
+#include "texture.h"
 
 // clang-format on
 static const char font_data[] = {
@@ -652,10 +653,10 @@ static inline void default_shader(void *restrict instance, const rohan_raster_st
     _mm256_maskstore_epi32((int *)(data->pixels + state->byte_offset), mask, data->color);
 }
 
-void mt_render_text_2d_default(int *pixels, int width, mt_string_view text, int x, int y, int w, int h, int color)
+void mt_render_text_2d_default(mt_texture *pixels, mt_string_view text, int x, int y, int w, int h, int color)
 {
     default_shader_data data;
-    data.pixels = (uint8_t *)pixels;
+    data.pixels = pixels->data;
     data.color = _mm256_set1_epi32(color);
 
     rohan_shader_desc desc;
@@ -663,9 +664,10 @@ void mt_render_text_2d_default(int *pixels, int width, mt_string_view text, int 
     desc.attribute_count = 2;
     desc.attribute_offset = offsetof(default_shader_data, u);
 
-    size_t target_pitch = width * sizeof(int);
-    size_t target_stride = sizeof(int);
-    float uvs[] = {0.f, 0.f, 15.f, 0.f, 15.f, 15.f, 0.f, 15.f};
+    __m256 temp0[2], temp1[2], temp2[2];
+    desc._attr_dx = temp0;
+    desc._attr_dy = temp1;
+    desc._attr_0 = temp2;
 
     for (size_t i = 0; i < text.len; ++i)
     {
@@ -674,7 +676,12 @@ void mt_render_text_2d_default(int *pixels, int width, mt_string_view text, int 
         int x0 = x + i * w;
         int x1 = x0 + w;
 
-        rohan_rasterize(&desc, &data, target_pitch, target_stride, x0, y, x1, y, x1, y + h, uvs, uvs + 2, uvs + 4);
-        rohan_rasterize(&desc, &data, target_pitch, target_stride, x0, y, x1, y + h, x0, y + h, uvs, uvs + 4, uvs + 6);
+        float vertex0[] = {x0, y, 0.f, 0.f};
+        float vertex1[] = {x1, y, 15.f, 0.f};
+        float vertex2[] = {x1, y + h, 15.f, 15.f};
+        float vertex3[] = {x0, y + h, 0.f, 15.f};
+
+        rohan_rasterize(&desc, &data, pixels->pitch, pixels->stride, vertex0, vertex1, vertex2);
+        rohan_rasterize(&desc, &data, pixels->pitch, pixels->stride, vertex0, vertex2, vertex3);
     }
 }

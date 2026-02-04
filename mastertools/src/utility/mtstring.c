@@ -4,15 +4,14 @@
 #include <string.h>
 
 #include "logging.h"
+#include "mtassert.h"
 #include "types.h"
+#include "utility/zero_init.h"
 
 static inline void string_resize_no_init(mt_string *str, size_t new_len)
 {
     char *new_str = realloc(str->str, new_len + 1);
-    if (!new_str)
-    {
-        LFATAL("Memory reallocation for string failed");
-    }
+    MT_ASSERT(new_str != NULL, "Memory reallocation for string failed");
 
     str->str = new_str;
     str->str[new_len] = '\0';
@@ -32,10 +31,7 @@ static inline void string_concat(mt_string *str, const char *raw, size_t raw_len
 mt_string mt_string_create(size_t len)
 {
     char *str = malloc(len + 1);
-    if (!str)
-    {
-        LFATAL("Memory allocation for string failed");
-    }
+    MT_ASSERT(str != NULL, "Memory allocation for string failed");
 
     memset(str, '`', len);
     str[len] = '\0';
@@ -44,20 +40,23 @@ mt_string mt_string_create(size_t len)
 
 void mt_string_free(mt_string *str)
 {
-    free(str->str);
+    if (!str)
+    {
+        return;
+    }
 
-#ifdef MT_SANITIZE_FREE
-    memset(str, 0, sizeof *str);
-#endif
+    if (str->str)
+    {
+        free(str->str);
+    }
+
+    MT_ZERO_INIT(str);
 }
 
 mt_string mt_string_copy_range_raw(const char *str, size_t start, size_t count)
 {
     char *buffer = malloc(count + 1);
-    if (!buffer)
-    {
-        LFATAL("Memory allocation for string failed");
-    }
+    MT_ASSERT(buffer != NULL, "Memory allocation for string failed");
 
     memcpy(buffer, str + start, count);
     buffer[count] = '\0';

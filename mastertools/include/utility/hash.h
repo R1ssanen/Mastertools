@@ -4,7 +4,7 @@
 #include "mtstring.h"
 #include "types.h"
 
-static inline size_t mt_hash_fnv_1a(mt_string_view view)
+static inline size_t mt_hash_fnv_1a_64(mt_string_view view)
 {
     size_t hash = 0xcbf29ce484222325;
 
@@ -12,6 +12,19 @@ static inline size_t mt_hash_fnv_1a(mt_string_view view)
     {
         hash ^= view.str[i];
         hash *= 0x00000100000001b3;
+    }
+
+    return hash;
+}
+
+static inline uint mt_hash_fnv_1a_32(mt_string_view view)
+{
+    uint hash = 0x811c9dc5;
+
+    for (size_t i = 0; i < view.len; ++i)
+    {
+        hash ^= view.str[i];
+        hash *= 0x01000193;
     }
 
     return hash;
